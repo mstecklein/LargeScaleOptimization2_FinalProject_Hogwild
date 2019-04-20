@@ -137,7 +137,7 @@ int main(){
     double val = f_linear(rows, X_ref, beta, y);
     printf("val: %f\n", val);
     
-    destroy2D(X_sparse);
+    destroy2D(X_ref);
     
     
     return 0;
