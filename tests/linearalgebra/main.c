@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 
-void print1D(double* v){
-    for(int i = 0; i < 12; i++){
+void print1D(double* v, int len){
+    for(int i = 0; i < len; i++){
         printf("%f ", v[i]);
     }
     printf("\n");
@@ -138,13 +138,15 @@ int main(){
     // init X, beta, y
     
     ///////// MODIFY THIS //////////
-    int rows = 3;
-    int cols = 3;
-    double X_data[9] = {0,1,0,
-                        3,1,0,
-                        0,4,0};
-    double beta[3] = {1,2,3};
-    double y[3] = {-1,0,1};
+    int rows = 5;
+    int cols = 4;
+    double X_data[20] = {0,1,0,0,
+                        3,1,0,-2,
+                        0,4,0,0,
+                        0,0,1,1,
+                        -1,0,-3,0};
+    double beta[4] = {1,2,3,4};
+    double y[5] = {-2,-1,0,1,2};
     ////////////////////////////////
     
     double** X = create2D(rows, cols);
@@ -165,7 +167,7 @@ int main(){
     double f_val = f_linear(rows, X_ref, beta, y);
     double* df_val = gradf_linear(rows, X_ref, X_T_ref, beta, y);
     printf("f: %f\ndf: ", f_val);
-    print1D(df_val);
+    print1D(df_val, rows);
     
     // free memory
     destroy2D(X);
