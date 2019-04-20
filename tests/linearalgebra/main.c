@@ -117,6 +117,9 @@ double f_linear(int X_rows, double** X_ref, double* beta, double* y){
     double* XB_y = vec_sub(X_rows, XB, y);
     double L2_XB_y = L2(X_rows, XB_y);
     
+    free(XB);
+    free(XB_y);
+    
     return L2_XB_y;
 }
 
@@ -138,8 +141,13 @@ double* gradf_linear(int rows, int cols, double** X_ref, double** X_T_ref, doubl
     double* XB = sparse_dot(rows, X_ref, beta);
     double* XB_y = vec_sub(rows, XB, y);
     double* X_T_XB_y = sparse_dot(cols, X_T_ref, XB_y);
+    double* X_T_XB_y_2 = vec_scale(rows, X_T_XB_y, 2);
     
-    return vec_scale(rows, X_T_XB_y, 2);
+    free(XB);
+    free(XB_y);
+    free(X_T_XB_y);
+    
+    return X_T_XB_y_2;
 }
 
 int main(){
@@ -161,7 +169,7 @@ int main(){
     int rows = 20;
     int cols = 1;
     double X_data[20] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19};
-    double beta_data[1] = {5};
+    double beta_data[1] = {10};
     double y[20] = {.5,1,1.5,3,3.5,5.1,6.3,6.7,8.1,9,10,11.4,11.9,12.5,13.9,14.8,16.2,17.3,18,19.1};
     ////////////////////////////////
     
@@ -176,6 +184,7 @@ int main(){
         beta[i] = beta_data[i];
     }
     
+    
     // get X.T
     double** X_T = transpose(rows, cols, X);
     
@@ -185,15 +194,26 @@ int main(){
     
     double n = 0.0001; // less than 0.001
     // update beta <- beta - n * df_val
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < 20; i++){
         double f_val = f_linear(rows, X_ref, beta, y);
         double* df_val = gradf_linear(rows, cols, X_ref, X_T_ref, beta, y);
-        beta = vec_sub(cols, beta, vec_scale(cols, df_val, n));
+        
+        double* n_df = vec_scale(cols, df_val, n);
+        double* beta1 = vec_sub(cols, beta, n_df);
+        
+        free(df_val);
+        free(n_df);
+        free(beta);
+        
+        beta = beta1;
+        
         printf("beta: ");
         print1D(beta, cols);
     }
     
     // free memory
+    free(beta);
+    
     destroy2D(X);
     destroy2D(X_T);
     destroy2D(X_ref);
