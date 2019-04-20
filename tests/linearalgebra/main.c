@@ -1,12 +1,5 @@
-
 #include <stdio.h>
 #include <math.h>
-
-/*typedef struct matrix_struct {
-    int r;
-    int c;
-    double** data;
-} matrix;*/
 
 void print1D(double* v){
     for(int i = 0; i < 12; i++){
@@ -43,7 +36,7 @@ void destroy2D(double** arr){
 //reference: https://www.geeksforgeeks.org/pass-2d-array-parameter-c/
 //input: X
 //output: reformatted double** X_ref
-double** reformat(int rows, int cols, double X[][cols]){
+double** reformat(int rows, int cols, double** X){
     double** ref_matrix = create2D(rows, 2 * cols + 1);
     for(int i = 0; i < rows; i++){
         int idx = 0;
@@ -87,6 +80,16 @@ double* vec_sub(int len, double* v1, double* v2){
     return v3;
 }
 
+//input: v1, scalar
+//output: v1 * scalar
+double* vec_scale(int len, double* v1, double scalar){
+    double* v3 = malloc(len * sizeof(double));
+    for(int i = 0; i < len; i++){
+        v3[i] = scalar * v1[i];
+    }
+    return v3;
+}
+
 //input: vector vec
 //output: ||vec||^2
 double L2(int len, double* vec){
@@ -107,38 +110,68 @@ double f_linear(int X_rows, double** X_ref, double* beta, double* y){
     return L2_XB_y;
 }
 
+//input: X
+//output: X.T
+double** transpose(int rows, int cols, double** X){
+    double** trans = create2D(rows, cols);
+    for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols; j++){
+            trans[i][j] = X[j][i];
+        }
+    }
+    return trans;
+}
+
+//input: X_ref, X_T_ref, beta, y
+//output: grad f
+double* gradf_linear(int X_rows, double** X_ref, double** X_T_ref, double* beta, double* y){
+    double* XB = sparse_dot(X_rows, X_ref, beta);
+    double* XB_y = vec_sub(X_rows, XB, y);
+    double* X_T_XB_y = sparse_dot(X_rows, X_T_ref, XB_y);
+    
+    return vec_scale(X_rows, X_T_XB_y, 2);
+}
+
 int main(){
-    // Given X, beta, and y
-    // f = ||XB - y||^2
-    // df = 2 * X.T * (XB - y)
+    printf("Ignore the extra numbers at the end of each row for print1D and print2D!\n");
+ 
+    // init X, beta, y
     
-    // Say X = 
-    //  2 -1  0  0
-    // -1  2 -1  0
-    //  0 -1  2 -1
-    //  0  0 -1  2
-    
-    // Say beta = 
-    //  1
-    //  0
-    // -1
-    //  0
-    
-    double X[3][3] = {0,1,0,3,1,0,0,4,0};
-    double beta[3] = {1,2,3};
-    double y[3] = {-1,0,1};
+    ///////// MODIFY THIS //////////
     int rows = 3;
     int cols = 3;
+    double X_data[9] = {0,1,0,
+                        3,1,0,
+                        0,4,0};
+    double beta[3] = {1,2,3};
+    double y[3] = {-1,0,1};
+    ////////////////////////////////
     
-    // currently, X must be a 2d array, not double**.  Not sure if it makes a difference
+    double** X = create2D(rows, cols);
+    for(int i = 0; i < rows; i++){
+        for(int j = 0; j < cols; j++){
+            X[i][j] = X_data[i * rows + j];
+        }
+    }
+    
+    // get X.T
+    double** X_T = transpose(rows, cols, X);
+    
+    // reformat X and X.T
     double** X_ref = reformat(rows, cols, X);
-    print2D(X_ref, rows);
+    double** X_T_ref = reformat(rows, cols, X_T);
     
-    double val = f_linear(rows, X_ref, beta, y);
-    printf("val: %f\n", val);
+    // calculate f and df
+    double f_val = f_linear(rows, X_ref, beta, y);
+    double* df_val = gradf_linear(rows, X_ref, X_T_ref, beta, y);
+    printf("f: %f\ndf: ", f_val);
+    print1D(df_val);
     
+    // free memory
+    destroy2D(X);
+    destroy2D(X_T);
     destroy2D(X_ref);
-    
+    destroy2D(X_T_ref);
     
     return 0;
 }
