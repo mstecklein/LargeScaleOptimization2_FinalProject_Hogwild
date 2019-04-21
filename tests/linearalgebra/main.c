@@ -2,10 +2,11 @@
 #include <math.h>
 
 void print1D(double* v, int len){
-    for(int i = 0; i < len; i++){
-        printf("%f ", v[i]);
+    printf("[");
+    for(int i = 0; i < len - 1; i++){
+        printf("%f, ", v[i]);
     }
-    printf("\n");
+    printf("%f]\n", v[len - 1]);
 }
 
 void print2D(double** sp, int rows){
@@ -156,21 +157,24 @@ int main(){
     // init X, beta, y
     
     ///////// MODIFY THIS //////////
-    /*int rows = 5;
+    double n = 0.01; //step-size
+    int rows = 5;
     int cols = 4;
     double X_data[20] = {0,1,0,0,
                         3,1,0,-2,
                         0,4,0,0,
                         0,0,1,1,
                         -1,0,-3,0};
-    double beta[4] = {1,2,3,4};
-    double y[5] = {-2,-1,0,1,2};*/
+    double beta_data[4] = {1,2,3,4};
+    double y[5] = {-2,-1,0,1,2};
     
+    /*
+    double n = 0.0001; //step-size
     int rows = 20;
     int cols = 1;
     double X_data[20] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19};
     double beta_data[1] = {10};
-    double y[20] = {.5,1,1.5,3,3.5,5.1,6.3,6.7,8.1,9,10,11.4,11.9,12.5,13.9,14.8,16.2,17.3,18,19.1};
+    double y[20] = {.5,1,1.5,3,3.5,5.1,6.3,6.7,8.1,9,10,11.4,11.9,12.5,13.9,14.8,16.2,17.3,18,19.1};*/
     ////////////////////////////////
     
     double** X = create2D(rows, cols);
@@ -192,7 +196,6 @@ int main(){
     double** X_ref = reformat(rows, cols, X);
     double** X_T_ref = reformat(cols, rows, X_T);
     
-    double n = 0.0001; // less than 0.001
     // update beta <- beta - n * df_val
     for(int i = 0; i < 20; i++){
         double f_val = f_linear(rows, X_ref, beta, y);
@@ -207,7 +210,7 @@ int main(){
         
         beta = beta1;
         
-        printf("beta: ");
+        printf("f: %f, beta: ", f_val);
         print1D(beta, cols);
     }
     
