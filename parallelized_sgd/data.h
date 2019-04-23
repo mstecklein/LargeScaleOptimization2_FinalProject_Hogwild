@@ -6,9 +6,19 @@
 #define _data_h_
 
 
+// Sparse matrices can be written in a more compact structure as follows:
+//   For each row of the dense matrix, create a list of only the non-zero
+//   values of that row. Each entry of the list is a "point" as defined
+//   below, which has a column index and value.
+typedef struct _sparse_point_t {
+	int index;
+	double value;
+} sparse_point_t;
+
+
 typedef struct _data_t {
 	double **X; // ptr to data matrix, num_samples x num_features
-	// TODO add sparse_X representation of X
+	sparse_point_t **sparse_X; // sparse representation of X as described above
 	double *y; // ptr to label array, num_samples x 1
 	double *optimal_iterate; // the true beta for X*beta = y
 	int num_samples; // number of data samples
