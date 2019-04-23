@@ -23,11 +23,11 @@ int timer_start(timer_t *timer) {
 		return -1;
 	// Get start times
 	int rc;
-	rc = clock_gettime(CLOCK_MONOTONIC, &(timer->start_time_tspec));
+	rc = clock_gettime(CLOCK_MONOTONIC, timer->start_time_tspec);
 	if (rc)
 		return rc;
 	int who = RUSAGE_SELF; // TODO (timer->scope == TIMER_SCOPE_PROCESS) ? RUSAGE_SELF : RUSAGE_THREAD;
-	rc = getrusage(who, &timer->start_time_rusg);
+	rc = getrusage(who, timer->start_time_rusg);
 	if (rc)
 		return rc;
 	// Timer is now "running"
@@ -51,9 +51,9 @@ int timer_pause(timer_t *timer) {
 	if (rc)
 		return rc;
 	// Add diff since start times to the accumulator
-	long long real_diff = (curr_tspec.tv_sec - timer->start_time_tspec.tv_sec)*1000000000L + (curr_tspec.tv_nsec - timer->start_time_tspec.tv_nsec);
-	long long user_diff = (curr_rusg.ru_utime.tv_sec - timer->start_time_rusg.ru_utime.tv_sec)*1000000L + (curr_rusg.ru_utime.tv_usec - timer->start_time_rusg.ru_utime.tv_usec);
-	long long sys_diff = (curr_rusg.ru_stime.tv_sec - timer->start_time_rusg.ru_stime.tv_sec)*1000000L + (curr_rusg.ru_stime.tv_usec - timer->start_time_rusg.ru_stime.tv_usec);
+	long long real_diff = (curr_tspec.tv_sec - timer->start_time_tspec->tv_sec)*1000000000L + (curr_tspec.tv_nsec - timer->start_time_tspec->tv_nsec);
+	long long user_diff = (curr_rusg.ru_utime.tv_sec - timer->start_time_rusg->ru_utime.tv_sec)*1000000L + (curr_rusg.ru_utime.tv_usec - timer->start_time_rusg->ru_utime.tv_usec);
+	long long sys_diff = (curr_rusg.ru_stime.tv_sec - timer->start_time_rusg->ru_stime.tv_sec)*1000000L + (curr_rusg.ru_stime.tv_usec - timer->start_time_rusg->ru_stime.tv_usec);
 	timer->real_cumulative += real_diff;
 	timer->user_cumulative += user_diff;
 	timer->sys_cumulative  += sys_diff;

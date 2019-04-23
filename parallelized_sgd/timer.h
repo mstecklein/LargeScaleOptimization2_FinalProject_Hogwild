@@ -23,8 +23,8 @@
 typedef struct _timer_t {
 	int status; // running/paused
 	int scope; // process/thread
-	struct timespec start_time_tspec; // real times
-	struct rusage start_time_rusg; // user/sys times
+	struct timespec *start_time_tspec; // real times
+	struct rusage *start_time_rusg; // user/sys times
 	long long real_cumulative; // nanoseconds
 	long long user_cumulative; // microseconds
 	long long sys_cumulative; // microseconds

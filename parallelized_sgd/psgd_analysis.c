@@ -1,0 +1,171 @@
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <pthread.h>
+#include "problem.h"
+#include "psgd_analysis.h"
+
+
+#define THREADJOB_NONE				0
+#define THREADJOB_RECORD_ITERATES	1
+
+
+
+
+/*
+ *  Analysis and algorithm wrappers
+ */
+
+
+#define THREADJOB_NONE				0
+#define THREADJOB_RECORD_ITERATES	1
+
+
+typedef struct _algowrapperargs_t {
+	int num_iters;
+	int threadjob;
+	log_t *log;
+	data_t *data;
+	pthread_cond_t *sync_cond;
+	pthread_mutex_t *sync_mutex;
+	double *iterate; // array of length data->num_features
+} algowrapperargs_t;
+
+
+static void* algo_wrapper(void *wrapperargs) {
+	int rc;
+	int log_step; // # iters between logging
+	timer_t timer;
+	algowrapperargs_t *args = (algowrapperargs_t *) wrapperargs;
+	log_step = args->num_iters / NUM_LOG_POINTS;
+	// timer_initialize(&timer, TIMER_SCOPE_THREAD);
+	timer_initialize(&timer, TIMER_SCOPE_PROCESS); // TODO change this to thread
+	rc = current_problem.algo_init_func(args->data->num_features);
+	if (rc)
+		pthread_exit(NULL);
+
+	// Wait at starting line for release by condition
+	pthread_mutex_lock(args->sync_mutex);
+    pthread_cond_wait(args->sync_cond, args->sync_mutex);
+    pthread_mutex_unlock(args->sync_mutex); // unlocking for other threads
+	timer_start(&timer);
+
+	// Run algo for num_iters iterations
+	for (int i = 1; i <= args->num_iters; i++) {
+		rc = current_problem.algo_update_func(args->iterate, args->data);
+		if (rc)
+			pthread_exit(NULL);
+		// Log iterate and timestamp values, if required
+		if (args->threadjob == THREADJOB_RECORD_ITERATES) {
+			if (i % log_step == 0) {
+				int sz = args->log->size;
+				if (sz+1 <= args->log->capacity) {
+					// copy iterate value
+					memcpy(&(args->log->iterates[sz]), args->iterate, sizeof(double)*args->data->num_features);
+					// copy timer
+					args->log->timestamps[sz] = timer;
+					// inc log size
+					args->log->size++;
+				}
+			}
+		}
+	}
+	
+	current_problem.algo_deinit_func();
+	pthread_exit(NULL);
+}
+
+
+int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
+	int rc;
+	algowrapperargs_t args;
+	pthread_t *threads;
+	pthread_attr_t attr;
+	void *status;
+	timer_t main_thread_timer;
+	pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_cond_t sync_cond = PTHREAD_COND_INITIALIZER;
+
+	// Alloc, initialize, and set thread joinable
+	threads = (pthread_t *) malloc(num_threads * sizeof(pthread_t));
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	timer_initialize(&main_thread_timer, TIMER_SCOPE_PROCESS);
+
+	// Start wrapper threads
+	args.num_iters = NUM_TOTAL_ITER / num_threads;
+	args.data = data;
+	args.sync_cond = &sync_cond;
+	args.sync_mutex = &sync_mutex;
+	for (int thread_num = 0; thread_num < num_threads; thread_num++) {
+		if (!thread_num) {
+			args.threadjob = THREADJOB_RECORD_ITERATES;
+			args.log = log;
+		} else {
+			args.threadjob = THREADJOB_NONE;
+			args.log = NULL;
+		}
+		rc = pthread_create(&threads[thread_num], &attr, algo_wrapper, (void *)&args);
+		if (rc)
+			return rc;
+	}
+
+	// Start main thread's timer and release threads
+	sleep(1); // wait for threads to hit condition
+	timer_start(&main_thread_timer);
+	pthread_cond_broadcast(&sync_cond);
+
+	// Wait for threads to finish
+	for (int thread_num = 0; thread_num < num_threads; thread_num++) {
+	   rc = pthread_join(threads[thread_num], &status);
+	   if (rc)
+		   return rc;
+	}
+
+	// Stop main thread timer
+	timer_pause(&main_thread_timer);
+	timer_get_stats(&main_thread_timer, main_thread_stats);
+
+	// Clean up
+	free(threads);
+	pthread_attr_destroy(&attr);
+	return 0;
+}
+
+
+
+
+/*
+ *  Logging
+ */
+
+
+int log_initialize(log_t *log, int num_data_features) {
+	// Alloc iterates array
+	log->iterates = (double **) malloc(NUM_LOG_POINTS*sizeof(double *));
+	// Alloc each iterate
+	for (int i = 0; i < NUM_LOG_POINTS; i++) {
+		int iterate_size = num_data_features*sizeof(double);
+		double *iterate = (double *) malloc(iterate_size);
+		memset(iterate, 0, iterate_size);
+		log->iterates[i] = iterate;
+	}
+	// Alloc timestamp array
+	log->timestamps = (timer_t *) malloc(NUM_LOG_POINTS*sizeof(timer_t));
+	log->size = 0;
+	log->capacity = NUM_LOG_POINTS;
+	return 0;
+}
+
+
+int log_free(log_t *log) {
+	// Free each iterate
+	for (int i = 0; i < NUM_LOG_POINTS; i++) {
+		free(log->iterates[i]);
+	}
+	// Free iterates array
+	free(log->iterates);
+	// Free timestamp array
+	free(log->timestamps);
+	return 0;
+}
