@@ -5,10 +5,8 @@
 #include "hogwild.h"
 
 
-timer_t hogwild_gradient_timer;
-timer_t hogwild_coordupdate_timer;
-timer_t hogwild_coordupdate_repeat_timer;
-static double *sample_grad;
+static double *sample_grad; // TODO need one of these for each thread
+static double **scratchpad; // TODO add code to implement this
 
 
 static void atomic_decrement(double *dest, double dec_amt) {
@@ -26,7 +24,7 @@ static void atomic_decrement(double *dest, double dec_amt) {
 }
 
 
-int hogwild(double *iterate, data_t *data) {
+int hogwild(double *iterate, data_t *data, int thread_num) {
 	// Get random sample
 	int rand_index = rand() % data->num_samples;
 	double *sample_x = data->X[rand_index];
@@ -37,25 +35,18 @@ int hogwild(double *iterate, data_t *data) {
 	// TODO is it necessary to copy the gradient value here?
 
 	// Evaluate gradient
-	timer_start(&hogwild_gradient_timer);
-	gradient(iterate, sample_x, sample_y, sample_grad);
-	timer_pause(&hogwild_gradient_timer);
+	gradient(iterate, sample_x, sample_y, sample_grad, scratchpad[thread_num]);
 
 	// Update coordinate individually and atomically
-	timer_initialize(&hogwild_coordupdate_timer, TIMER_SCOPE_THREAD);
 	for (int i = 0; i < data->num_features; i++) { // TODO modify this to only update on the support of the sample
 		atomic_decrement(&iterate[i], get_stepsize()*sample_grad[i]);
 	}
-	timer_pause(&hogwild_coordupdate_timer);
 
 	return 0;
 }
 
 
-int hogwild_initialize(int num_features) {
-	timer_initialize(&hogwild_gradient_timer, TIMER_SCOPE_THREAD);
-	timer_initialize(&hogwild_coordupdate_timer, TIMER_SCOPE_THREAD);
-	timer_initialize(&hogwild_coordupdate_repeat_timer, TIMER_SCOPE_THREAD);
+int hogwild_initialize(int num_features, int num_threads) {
 	srand(time(NULL));
 	sample_grad = (double *) malloc(num_features * sizeof(double));
 	return 0;

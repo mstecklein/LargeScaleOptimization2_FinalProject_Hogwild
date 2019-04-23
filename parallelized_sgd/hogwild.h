@@ -8,15 +8,10 @@
 #include "timer.h"
 
 
-extern timer_t hogwild_gradient_timer;
-extern timer_t hogwild_coordupdate_timer;
-extern timer_t hogwild_coordupdate_repeat_timer;
+int hogwild(double *iterate, data_t *data, int thread_num);
 
 
-int hogwild(double *iterate, data_t *data);
-
-
-int hogwild_initialize(int num_features);
+int hogwild_initialize(int num_features, int num_threads);
 int hogwild_deinitialize(void);
 
 

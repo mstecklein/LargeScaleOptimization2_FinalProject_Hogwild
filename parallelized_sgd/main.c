@@ -10,7 +10,6 @@
 
 
 
-int read_data_from_file(char *filename, data_t *data);
 int write_results_to_file(int num_threads, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats);
 
 
@@ -24,7 +23,7 @@ int main(int argc, char **argv) {
 	log_t log;
 
 	// First argument is max number of threads to run,
-	//    second argument is max number of threads to run
+	//    second argument is the data filename
 	if (argc < 3) {
 		printf("Usage: ./run <max_num_threads> <data_filename>\n");
 		exit(-1);
@@ -33,7 +32,7 @@ int main(int argc, char **argv) {
 	filename = argv[2];
 
 	// Read data file
-	rc = read_data_from_file(filename, &data);
+	rc = read_and_alloc_data(filename, &data);
 	if (rc)
 		exit(-1);
 
@@ -45,7 +44,6 @@ int main(int argc, char **argv) {
 		timerstats_t *threads_stats = (timerstats_t *) malloc(num_threads * sizeof(timerstats_t));
 
 		// Run general analysis for LinearRegression with HOGWILD!
-		// TODO
 		problem.gradient = linreg_gradient;
 		problem.algo_update_func = hogwild;
 		problem.algo_init_func = hogwild_initialize;
@@ -61,16 +59,11 @@ int main(int argc, char **argv) {
 		free(threads_stats);
 	}
 	log_free(&log);
-
+	dealloc_data(&data);
 }
 
 
 
-
-
-int read_data_from_file(char *filename, data_t *data) {
-	return -1; // TODO
-}
 
 
 int write_results_to_file(int num_threads, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {

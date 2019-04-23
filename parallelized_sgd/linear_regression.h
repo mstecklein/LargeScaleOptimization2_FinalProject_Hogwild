@@ -9,7 +9,7 @@
 
 // Returns the gradient for a sample given the current iterate,
 //   the sampled data point, and its respective label.
-int linreg_gradient(double *iterate, double *sample_x, double sample_y, double *sample_grad);
+int linreg_gradient(double *iterate, double *sample_x, double sample_y, double *sample_grad, double *scratchpad);
 
 
 #endif // _linear_regression_h_

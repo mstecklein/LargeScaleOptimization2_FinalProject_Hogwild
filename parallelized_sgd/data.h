@@ -8,6 +8,7 @@
 
 typedef struct _data_t {
 	double **X; // ptr to data matrix, num_samples x num_features
+	// TODO add sparse_X representation of X
 	double *y; // ptr to label array, num_samples x 1
 	double *optimal_iterate; // the true beta for X*beta = y
 	int num_samples; // number of data samples
@@ -15,8 +16,7 @@ typedef struct _data_t {
 } data_t;
 
 
-int read_and_alloc_data(data_t *data);
-
+int read_and_alloc_data(char *filename, data_t *data);
 
 int dealloc_data(data_t *data);
 

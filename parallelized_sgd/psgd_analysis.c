@@ -23,6 +23,7 @@
 
 typedef struct _algowrapperargs_t {
 	int num_iters;
+	int thread_num;
 	int threadjob;
 	log_t *log;
 	data_t *data;
@@ -40,9 +41,6 @@ static void* algo_wrapper(void *wrapperargs) {
 	log_step = args->num_iters / NUM_LOG_POINTS;
 	// timer_initialize(&timer, TIMER_SCOPE_THREAD);
 	timer_initialize(&timer, TIMER_SCOPE_PROCESS); // TODO change this to thread
-	rc = current_problem.algo_init_func(args->data->num_features);
-	if (rc)
-		pthread_exit(NULL);
 
 	// Wait at starting line for release by condition
 	pthread_mutex_lock(args->sync_mutex);
@@ -52,7 +50,7 @@ static void* algo_wrapper(void *wrapperargs) {
 
 	// Run algo for num_iters iterations
 	for (int i = 1; i <= args->num_iters; i++) {
-		rc = current_problem.algo_update_func(args->iterate, args->data);
+		rc = current_problem.algo_update_func(args->iterate, args->data, args->thread_num);
 		if (rc)
 			pthread_exit(NULL);
 		// Log iterate and timestamp values, if required
@@ -71,7 +69,6 @@ static void* algo_wrapper(void *wrapperargs) {
 		}
 	}
 	
-	current_problem.algo_deinit_func();
 	pthread_exit(NULL);
 }
 
@@ -91,6 +88,9 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	timer_initialize(&main_thread_timer, TIMER_SCOPE_PROCESS);
+	rc = current_problem.algo_init_func(data->num_features, num_threads);
+	if (rc)
+		pthread_exit(NULL);
 
 	// Start wrapper threads
 	args.num_iters = NUM_TOTAL_ITER / num_threads;
@@ -105,6 +105,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 			args.threadjob = THREADJOB_NONE;
 			args.log = NULL;
 		}
+		args.thread_num = thread_num;
 		rc = pthread_create(&threads[thread_num], &attr, algo_wrapper, (void *)&args);
 		if (rc)
 			return rc;
@@ -129,6 +130,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	// Clean up
 	free(threads);
 	pthread_attr_destroy(&attr);
+	current_problem.algo_deinit_func();
 	return 0;
 }
 
