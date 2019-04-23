@@ -10,6 +10,8 @@
 //   For each row of the dense matrix, create a list of only the non-zero
 //   values of that row. Each entry of the list is a "point" as defined
 //   below, which has a column index and value.
+
+// delimiter of each array is sparse_point struct with index of -1
 typedef struct _sparse_point_t {
 	int index;
 	double value;
