@@ -10,7 +10,7 @@
 
 
 typedef struct _problem_t {
-	int (*gradient)(double *iterate, double *sample_x, double sample_y, double *sample_grad, double *scratchpad);
+	int (*gradient)(double *iterate, sparse_point_t *sparse_sample_x, double sample_y, double *ret_sample_grad, double *scratchpad);
 	// Algorithm:
 	int (*algo_update_func)(double*, data_t*, int);
 	int (*algo_init_func)(int, int);
@@ -30,7 +30,7 @@ double get_stepsize(void);
 
 // Returns the gradient for a sample given the current iterate,
 //   the sampled data point, and its respective label.
-int gradient(double *iterate, double *sample_x, double sample_y, double *sample_grad, double *scratchpad);
+int gradient(double *iterate, sparse_point_t *sparse_sample_x, double sample_y, double *ret_sample_grad, double *scratchpad);
 
 
 #endif // _problem_h_
