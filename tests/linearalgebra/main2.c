@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "linear_regression.h"
 #include "linear_algebra.h"
+#include "logistic_regression.h"
 
 void print1D(double* v, int len){
     printf("[");
@@ -48,7 +49,8 @@ void destroy2D(double** arr){
 
 int main(){
     ///////// MODIFY THIS ///////////////////////////////////////////////////////////////////////////
-    /*double n = 0.01; //step-size
+    //double n = 0.01; //step-size linear
+    double n = 0.02; //step-size linear
     int rows = 5;
     int cols = 4;
     double X_data[20] = {0,1,0,0,
@@ -57,15 +59,17 @@ int main(){
                         0,0,1,1,
                         -1,0,-3,0};
     double beta_data[4] = {1,2,3,4};
-    double y[5] = {-2,-1,0,1,2};*/
+    double y[5] = {1,1,1,0,0};
     
     
-    double n = 0.0001; //step-size
+    //double n = 0.0001; //step-size linear
+    /*double n = 0.002; //step-size logistic
     int rows = 20;
     int cols = 1;
     double X_data[20] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19};
     double beta_data[1] = {10};
-    double y[20] = {.5,1,1.5,3,3.5,5.1,6.3,6.7,8.1,9,10,11.4,11.9,12.5,13.9,14.8,16.2,17.3,18,19.1};
+    //double y[20] = {.5,1,1.5,3,3.5,5.1,6.3,6.7,8.1,9,10,11.4,11.9,12.5,13.9,14.8,16.2,17.3,18,19.1}; // linear
+    double y[20] = {1,0,0,1,0,1,1,0,1,0,1,1,0,0,0,0,1,1,1,1}; // logistic*/
     /////////////////////////////////////////////////////////////////////////////////////////////////
     
     double** X = create2D(rows, cols);
@@ -79,7 +83,7 @@ int main(){
         beta[i] = beta_data[i];
     }
     
-    // reformat X into sparse format
+    // reformat X into sparse format, X_sparse
     sparse_point_t* values = calloc(rows * (cols + 1), sizeof(sparse_point_t));
     sparse_point_t** X_sparse = malloc(rows * sizeof(sparse_point_t*));
     for (int i = 0; i < rows; ++i){
@@ -98,12 +102,14 @@ int main(){
         X_sparse[i][idx].index = -1;
     }
     
+    // "sgd"
+    int epochs = 1000;
     double* scratch1 = malloc(cols * sizeof(double));
     double* scratch2 = malloc(cols * sizeof(double));
     
-    for(int ep = 0; ep < 100; ep++){
+    for(int ep = 0; ep < epochs; ep++){
         for(int i = 0; i < rows; i++){
-            int linreg_grad = linreg_gradient(beta, X[i], X_sparse[i], y[i], scratch1, cols); // s1 = grad
+            int grad = logreg_gradient(beta, X[i], X_sparse[i], y[i], scratch1, cols); // s1 = grad
             int scaled = scale(scratch2, scratch1, -n, cols); // s2 = -n * grad
             int added = add_dense(beta, beta, scratch2, cols);
         }

@@ -26,7 +26,7 @@ double dot_sparse_dense(sparse_point_t* sparse_v1, double* dense_v2){
     return sum;
 }
 
-/*double dot_dense_dense(double *dense_v1, double *dense_v2, int len){
+double dot_dense_dense(double *dense_v1, double *dense_v2, int len){
     double sum = 0;
     for(int i = 0; i < len; i++){
         sum += dense_v1[i] * dense_v2[i];
@@ -34,7 +34,7 @@ double dot_sparse_dense(sparse_point_t* sparse_v1, double* dense_v2){
     return sum;
 }
 
-double dot_sparse_sparse(sparse_point_t *sparse_v1, sparse_point_t *sparse_v2){
+/*double dot_sparse_sparse(sparse_point_t *sparse_v1, sparse_point_t *sparse_v2){
     int i = 0, j = 0;
     int idx = sparse_v1[i]->index;
     int jdx = sparse_v2[j]->index;
