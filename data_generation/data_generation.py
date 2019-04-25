@@ -1,12 +1,5 @@
 import numpy as np
-import numpy.random as rn
-import numpy.linalg as la
-import matplotlib.pyplot as plt
-import math
 import random
-import time
-import pandas as pd
-
 
 """
 Generates synthetic data which is sparse in each sample
@@ -22,11 +15,11 @@ seed: random seed for reproducing results
 -Returns-
 b: the vector of labels/outputs
 A: the data matrix
-x = the true coefficient vector
+x: the true coefficient vector
 """
-def gen_synth_sparse_data(n, d, sparsity_prop = 0.1, problem = "regression", noisy = True, seed = 1000):
+def gen_synth_sparse_data(n, d, Lasso = False, Lasso_sparsity = 0.1, data_sparsity = 0.1, problem = "regression", noisy = True, seed = 1000):
 
-    num_nonzero = int(d*sparsity_prop)
+    num_nonzero = int(d*data_sparsity)
     num_zero = d - num_nonzero
 
     #Seed for reproducibility
@@ -34,7 +27,7 @@ def gen_synth_sparse_data(n, d, sparsity_prop = 0.1, problem = "regression", noi
     random.seed(seed)
 
     #Check if sparsity parameter correct
-    if sparsity_prop > 1:
+    if data_sparsity > 1:
         print("Must have sparsity_prop < 1! Try again!")
         exit(0)
 
@@ -47,9 +40,13 @@ def gen_synth_sparse_data(n, d, sparsity_prop = 0.1, problem = "regression", noi
 
     A = np.multiply(A_dense, mask)
 
-    #Generate the coefficient vector and resulting labels
+    #Generate the coefficient vector with possible sparsity for Lasso problems
     x = np.random.normal(0, 1, d)
 
+    if Lasso:
+        x[random.sample(range(d), int((1-Lasso_sparsity) * d))] = 0 #replace all but Lasso_sparsity fraction of entries with 0
+
+    #Generate the output vector with possible AWGN and binary quantization if the problem is classification
     b = np.dot(A, x)
 
     if noisy:
@@ -59,6 +56,17 @@ def gen_synth_sparse_data(n, d, sparsity_prop = 0.1, problem = "regression", noi
         b = np.sign(b)
 
     return [b, A, x]
+
+"""
+Write data to files to use in parallel algorithms
+
+-Arguments-
+b: the outputs/labels
+A: the data matrix
+x: the true coefficient vector
+"""
+def write_data(b, A, x):
+    return 0
 
 """
 Shuffles the elements in each row of a matrix independently
