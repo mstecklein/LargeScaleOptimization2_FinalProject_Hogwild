@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
 	// Run psgd algorithm for various numbers of threads
 	log_initialize(&log, data.num_features);
-	for (int num_threads = 1; num_threads < max_num_threads; num_threads++) {
+	for (int num_threads = 1; num_threads <= max_num_threads; num_threads++) {
 		problem_t problem;
 		timerstats_t main_thread_stats;
 		timerstats_t *threads_stats = (timerstats_t *) malloc(num_threads * sizeof(timerstats_t));
@@ -49,7 +49,11 @@ int main(int argc, char **argv) {
 		problem.algo_init_func = hogwild_initialize;
 		problem.algo_deinit_func = hogwild_deinitialize;
 		set_current_problem(problem);
-		run_psgd_general_analysis(num_threads, &data, &log, &main_thread_stats, &threads_stats);
+		rc = run_psgd_general_analysis(num_threads, &data, &log, &main_thread_stats, &threads_stats);
+		if (rc) {
+			printf("Error running general analysis for LinearRegression with HOGWILD!\n");
+			exit(rc);
+		}
 
 		// Write results to file
 		rc = write_results_to_file(num_threads, &log, &main_thread_stats, &threads_stats);
@@ -67,5 +71,7 @@ int main(int argc, char **argv) {
 
 
 int write_results_to_file(int num_threads, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
+	// TODO redo this with proper functionality
+	printf("HERE in write_results_to_file\n");
 	return -1; // TODO
 }

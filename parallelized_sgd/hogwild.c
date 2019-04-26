@@ -27,17 +27,18 @@ static void atomic_decrement(double *dest, double dec_amt) {
 int hogwild(double *iterate, data_t *data, int thread_num) {
 	// Get random sample
 	int rand_index = rand() % data->num_samples;
-	double *sample_x = data->X[rand_index];
+	sparse_point_t *sparse_sample_X = data->sparse_X[rand_index];
 	double sample_y = data->y[rand_index];
-	// TODO get sample support too
 
 	// Read iterate
 	// TODO is it necessary to copy the gradient value here?
 
 	// Evaluate gradient
-	gradient(iterate, sample_x, sample_y, sample_grad, scratchpad[thread_num]);
+	printf("HOGWILD eval grad\n"); // TODO remove me
+	gradient(iterate, sparse_sample_X, sample_y, sample_grad, scratchpad[thread_num]);
 
 	// Update coordinate individually and atomically
+	printf("HOGWILD atomic dec\n"); // TODO remove me
 	for (int i = 0; i < data->num_features; i++) { // TODO modify this to only update on the support of the sample
 		atomic_decrement(&iterate[i], get_stepsize()*sample_grad[i]);
 	}

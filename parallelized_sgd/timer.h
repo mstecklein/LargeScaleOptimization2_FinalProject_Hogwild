@@ -44,6 +44,9 @@ typedef struct _timerstats_t {
 // Initializes the timer struct
 int timer_initialize(timer_t *timer, int scope);
 
+// Deinitializes the timer struct
+int timer_deinitialize(timer_t *timer);
+
 // Starts/resumes the timer.
 //    The timer must be paused.
 int timer_start(timer_t *timer);

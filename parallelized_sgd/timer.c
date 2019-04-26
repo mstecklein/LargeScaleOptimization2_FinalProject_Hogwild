@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "timer.h"
 
 
@@ -14,6 +15,15 @@ int timer_initialize(timer_t *timer, int scope) {
 	timer->real_cumulative = 0;
 	timer->user_cumulative = 0;
 	timer->sys_cumulative = 0;
+	timer->start_time_tspec = (struct timespec *) malloc(sizeof(struct timespec));
+	timer->start_time_rusg = (struct rusage *) malloc(sizeof(struct rusage));
+	return 0;
+}
+
+
+int timer_deinitialize(timer_t *timer) {
+	free(timer->start_time_tspec);
+	free(timer->start_time_rusg);
 	return 0;
 }
 

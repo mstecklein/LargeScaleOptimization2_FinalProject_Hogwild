@@ -10,8 +10,6 @@
 #define THREADJOB_RECORD_ITERATES	1
 
 
-
-
 /*
  *  Analysis and algorithm wrappers
  */
@@ -19,6 +17,10 @@
 
 #define THREADJOB_NONE				0
 #define THREADJOB_RECORD_ITERATES	1
+
+
+pthread_cond_t sync_start_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t sync_start_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 typedef struct _algowrapperargs_t {
@@ -43,13 +45,14 @@ static void* algo_wrapper(void *wrapperargs) {
 	timer_initialize(&timer, TIMER_SCOPE_PROCESS); // TODO change this to thread
 
 	// Wait at starting line for release by condition
-	pthread_mutex_lock(args->sync_mutex);
-    pthread_cond_wait(args->sync_cond, args->sync_mutex);
-    pthread_mutex_unlock(args->sync_mutex); // unlocking for other threads
+	pthread_mutex_lock(&sync_start_mutex);
+    pthread_cond_wait(&sync_start_cond, &sync_start_mutex);
+    pthread_mutex_unlock(&sync_start_mutex); // unlocking for other threads
 	timer_start(&timer);
 
 	// Run algo for num_iters iterations
 	for (int i = 1; i <= args->num_iters; i++) {
+		printf("iter# %d\n", i); // TODO remove me
 		rc = current_problem.algo_update_func(args->iterate, args->data, args->thread_num);
 		if (rc)
 			pthread_exit(NULL);
@@ -69,6 +72,7 @@ static void* algo_wrapper(void *wrapperargs) {
 		}
 	}
 	
+	timer_deinitialize(&timer);
 	pthread_exit(NULL);
 }
 
@@ -90,7 +94,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	timer_initialize(&main_thread_timer, TIMER_SCOPE_PROCESS);
 	rc = current_problem.algo_init_func(data->num_features, num_threads);
 	if (rc)
-		pthread_exit(NULL);
+		return rc;
 
 	// Start wrapper threads
 	args.num_iters = NUM_TOTAL_ITER / num_threads;
@@ -114,7 +118,9 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	// Start main thread's timer and release threads
 	sleep(1); // wait for threads to hit condition
 	timer_start(&main_thread_timer);
-	pthread_cond_broadcast(&sync_cond);
+	rc = pthread_cond_broadcast(&sync_start_cond);
+	if (rc)
+		return rc;
 
 	// Wait for threads to finish
 	for (int thread_num = 0; thread_num < num_threads; thread_num++) {
@@ -129,6 +135,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 
 	// Clean up
 	free(threads);
+	timer_deinitialize(&main_thread_timer);
 	pthread_attr_destroy(&attr);
 	current_problem.algo_deinit_func();
 	return 0;
