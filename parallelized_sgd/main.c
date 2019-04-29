@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
 		problem.algo_update_func = hogwild;
 		problem.algo_init_func = hogwild_initialize;
 		problem.algo_deinit_func = hogwild_deinitialize;
+		problem.stepsize = 0.0001;
 		set_current_problem(problem);
 		rc = run_psgd_general_analysis(num_threads, &data, &log, &main_thread_stats, &threads_stats);
 		if (rc) {
@@ -73,5 +74,9 @@ int main(int argc, char **argv) {
 int write_results_to_file(int num_threads, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
 	// TODO redo this with proper functionality
 	printf("HERE in write_results_to_file\n");
+	for (int i = 0; i < log->size; i++) {
+		printf("%d:  %llu\n", i, log->timestamps[i].real_cumulative);
+		print_dense_array(log->iterates[i], log->num_data_features);
+	}
 	return -1; // TODO
 }

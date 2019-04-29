@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
@@ -52,7 +53,6 @@ static void* algo_wrapper(void *wrapperargs) {
 
 	// Run algo for num_iters iterations
 	for (int i = 1; i <= args->num_iters; i++) {
-		printf("iter# %d\n", i); // TODO remove me
 		rc = current_problem.algo_update_func(args->iterate, args->data, args->thread_num);
 		if (rc)
 			pthread_exit(NULL);
@@ -62,7 +62,9 @@ static void* algo_wrapper(void *wrapperargs) {
 				int sz = args->log->size;
 				if (sz+1 <= args->log->capacity) {
 					// copy iterate value
-					memcpy(&(args->log->iterates[sz]), args->iterate, sizeof(double)*args->data->num_features);
+					for (int j = 0; j < args->data->num_features; j++) {
+						args->log->iterates[sz][j] = args->iterate[j];
+					}
 					// copy timer
 					args->log->timestamps[sz] = timer;
 					// inc log size
@@ -101,7 +103,10 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	args.data = data;
 	args.sync_cond = &sync_cond;
 	args.sync_mutex = &sync_mutex;
+	args.iterate = (double *) malloc(data->num_features*sizeof(double));
+	memset(args.iterate, 0, data->num_features*sizeof(double));
 	for (int thread_num = 0; thread_num < num_threads; thread_num++) {
+		args.thread_num = thread_num;
 		if (!thread_num) {
 			args.threadjob = THREADJOB_RECORD_ITERATES;
 			args.log = log;
@@ -109,7 +114,6 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 			args.threadjob = THREADJOB_NONE;
 			args.log = NULL;
 		}
-		args.thread_num = thread_num;
 		rc = pthread_create(&threads[thread_num], &attr, algo_wrapper, (void *)&args);
 		if (rc)
 			return rc;
@@ -124,9 +128,9 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 
 	// Wait for threads to finish
 	for (int thread_num = 0; thread_num < num_threads; thread_num++) {
-	   rc = pthread_join(threads[thread_num], &status);
-	   if (rc)
-		   return rc;
+		rc = pthread_join(threads[thread_num], &status);
+		if (rc)
+			return rc;
 	}
 
 	// Stop main thread timer
@@ -163,6 +167,7 @@ int log_initialize(log_t *log, int num_data_features) {
 	log->timestamps = (timer_t *) malloc(NUM_LOG_POINTS*sizeof(timer_t));
 	log->size = 0;
 	log->capacity = NUM_LOG_POINTS;
+	log->num_data_features = num_data_features;
 	return 0;
 }
 
@@ -177,4 +182,29 @@ int log_free(log_t *log) {
 	// Free timestamp array
 	free(log->timestamps);
 	return 0;
+}
+
+
+
+
+/*
+ *  Debug printouts
+ */
+
+
+void print_dense_array(double *arr, int len) {
+	printf("[ ");
+	for (int i = 0; i < len; i++) {
+		printf("%f ", arr[i]);
+	}
+	printf("]\n");
+}
+
+
+void print_sparse_array(sparse_array_t *arr) {
+	printf("[ ");
+	for (int i = 0; i < arr->len; i++) {
+		printf("%d:%f ", arr->pts[i].index, arr->pts[i].value);
+	}
+	printf("]\n");
 }
