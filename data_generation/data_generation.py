@@ -64,9 +64,22 @@ Write data to files to use in parallel algorithms
 b: the outputs/labels
 A: the data matrix
 x: the true coefficient vector
+n: the number of samples/rows of A/length of b
+d: the number of features/columns of A/length of x
+filename: the name of the output text file
 """
-def write_data(b, A, x):
-    return 0
+def write_data(b, A, x, n, d, filename = "test_data"):
+    #Want to save the arrays in the following format: x on first row with pad at end, A under it on LHS, b under on RHS (vertically)
+
+    #Create a shell matrix and fill it with the appropriate quantities
+    out = np.zeros((n+1, d+1))
+    out[0, 0:d] = x
+    out[1:n+1, d] = b
+    out[1:n+1, 0:d] = A
+
+    metadata = str(n) + " " + str(d)
+
+    np.savetxt(fname=filename, X=out, fmt="%-1.8f", header=metadata, comments='') #print with left justification, >= 1 character, floating point, 8 fractional digits
 
 """
 Shuffles the elements in each row of a matrix independently
@@ -80,6 +93,29 @@ def shuffle_rows(arr):
     cols = [np.random.permutation(y) for _ in range(x)] #returns an (x,y) matrix where each row is a random permutation of [0,...,y-1]
 
     return arr[rows, cols]
+
+def main():
+    n = 5
+    d = 5
+
+    lasso = False
+    sparsity = 0.2
+
+    type = "classification"
+
+    noisy = False
+
+    b,A,x = gen_synth_sparse_data(n=n, d=d, Lasso=lasso, data_sparsity=sparsity, problem=type, noisy=noisy)
+
+    write_data(b=b, A=A, x=x, n=n, d=d, filename="Test.txt")
+
+    print("A: ", A, "\n")
+    print("b: ", b, "\n")
+    print("x: ", x, "\n")
+
+
+if __name__ == "__main__":
+    main()
 
 
 
