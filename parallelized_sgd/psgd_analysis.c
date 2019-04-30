@@ -29,6 +29,7 @@ typedef struct _algowrapperargs_t {
 	int thread_num;
 	int threadjob;
 	log_t *log;
+	timerstats_t *threadstats;
 	data_t *data;
 	pthread_cond_t *sync_cond;
 	pthread_mutex_t *sync_mutex;
@@ -70,7 +71,9 @@ static void* algo_wrapper(void *wrapperargs) {
 						args->log->iterates[sz][j] = args->iterate[j];
 					}
 					// copy timer
+					timer_pause(&timer);
 					args->log->timestamps[sz] = timer;
+					timer_start(&timer);
 					// inc log size
 					args->log->size++;
 				}
@@ -78,12 +81,14 @@ static void* algo_wrapper(void *wrapperargs) {
 		}
 	}
 	
+	timer_pause(&timer);
+	timer_get_stats(&timer, args->threadstats);
 	timer_deinitialize(&timer);
 	pthread_exit(NULL);
 }
 
 
-int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
+int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerstats_t *main_thread_stats, timerstats_t *treads_stats_arr) {
 	int rc;
 	algowrapperargs_t *args;
 	pthread_t *threads;
@@ -115,6 +120,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 			args[thread_num].threadjob = THREADJOB_NONE;
 			args[thread_num].log = NULL;
 		}
+		args[thread_num].threadstats = &treads_stats_arr[thread_num];
 		args[thread_num].data = data;
 		args[thread_num].sync_cond = &sync_cond;
 		args[thread_num].sync_mutex = &sync_mutex;
@@ -256,7 +262,7 @@ static int write_results_log(int num_threads, log_t *log) {
 }
 
 
-static int write_results_threads_stats(int num_threads, timerstats_t main_thread_stats, timerstats_t *threads_stats) {
+static int write_results_threads_stats(int num_threads, timerstats_t main_thread_stats, timerstats_t *treads_stats_arr) {
 	FILE *fp;
 	char filename[30];
 	sprintf(filename, "threadstats_%dthread.csv", num_threads);
@@ -269,19 +275,19 @@ static int write_results_threads_stats(int num_threads, timerstats_t main_thread
 	fprintf(fp, "Main, %f, %f, %f\n", main_thread_stats.real, main_thread_stats.user, main_thread_stats.sys);
 	// Write other threads stats
 	for (int i = 0; i < num_threads; i++) {
-		fprintf(fp, "Thread%d, %f, %f, %f\n", i, threads_stats[i].real, threads_stats[i].user, threads_stats[i].sys);
+		fprintf(fp, "Thread%d, %f, %f, %f\n", i, treads_stats_arr[i].real, treads_stats_arr[i].user, treads_stats_arr[i].sys);
 	}
 	fclose(fp);
 	return 0;
 }
 
 
-int write_results_to_file(int num_threads, log_t *log, timerstats_t main_thread_stats, timerstats_t *threads_stats) {
+int write_results_to_file(int num_threads, log_t *log, timerstats_t main_thread_stats, timerstats_t *treads_stats_arr) {
 	int rc;
 	rc = write_results_log(num_threads, log);
 	if (rc)
 		return rc;
-	rc = write_results_threads_stats(num_threads, main_thread_stats, threads_stats);
+	rc = write_results_threads_stats(num_threads, main_thread_stats, treads_stats_arr);
 	if (rc)
 		return rc;
 	return 0;

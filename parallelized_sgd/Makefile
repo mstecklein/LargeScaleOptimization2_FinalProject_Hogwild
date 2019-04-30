@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-I. -pthread -D_GNU_SOURCE
+CFLAGS=-I. -pthread -D_GNU_SOURCE -g
 EXE=run
 DEPS = $(wildcard *.h)
 SRC = $(wildcard *.c)
