@@ -7,9 +7,11 @@ Generates synthetic data which is sparse in each sample
 -Arguments-
 n: num samples
 d: num features
-sparsity_prop: proportion of features that are nonzero for each sample
+Lasso: indicates if this is a Lasso problem - we want to make the coefficient vector sparse
+Lasso_sparsity: proportion of coefficients that are nonzero (only used if Lasso = True)
+data_sparsity: proportion of features that are nonzero for each sample
 problem: regression OR classification
-noisy: whether to add white Gaussian noise
+noisy: whether to add white Gaussian noise to the outputs
 seed: random seed for reproducing results
 
 -Returns-
@@ -36,7 +38,7 @@ def gen_synth_sparse_data(n, d, Lasso = False, Lasso_sparsity = 0.1, data_sparsi
 
     mask_arr = np.array([0]*num_zero + [1]*num_nonzero) #create the {0,1} mask matrix to project A onto the appropriate sparsity
     stacked = np.tile(mask_arr, (n, 1))
-    mask = shuffle_rows(stacked)
+    mask = shuffle_rows(stacked, seed)
 
     A = np.multiply(A_dense, mask)
 
@@ -45,6 +47,10 @@ def gen_synth_sparse_data(n, d, Lasso = False, Lasso_sparsity = 0.1, data_sparsi
 
     if Lasso:
         x[random.sample(range(d), int((1-Lasso_sparsity) * d))] = 0 #replace all but Lasso_sparsity fraction of entries with 0
+
+    #Ensure that there are no degenerate (e.g. -0) values
+    A[np.abs(A) < 1e-5] = 0
+    x[np.abs(x) < 1e-5] = 0
 
     #Generate the output vector with possible AWGN and binary quantization if the problem is classification
     b = np.dot(A, x)
@@ -87,7 +93,10 @@ Shuffles the elements in each row of a matrix independently
 -Arguments-
 arr: the array to shuffle
 """
-def shuffle_rows(arr):
+def shuffle_rows(arr, seed=1000):
+    np.random.seed(seed)
+    random.seed(seed)
+
     x, y = arr.shape
     rows = np.indices((x, y))[0] #returns an (x,y) matrix whose elements represent the index of their corresponding rows
     cols = [np.random.permutation(y) for _ in range(x)] #returns an (x,y) matrix where each row is a random permutation of [0,...,y-1]
@@ -95,23 +104,26 @@ def shuffle_rows(arr):
     return arr[rows, cols]
 
 def main():
-    n = 5
-    d = 5
+    n = 4
+    d = 4
 
-    lasso = False
-    sparsity = 0.2
+    seed = 2240
 
-    type = "classification"
+    lasso = True
+    lasso_sparsity = 0.75
+    sparsity = 0.25
 
-    noisy = False
+    type = "regression"
 
-    b,A,x = gen_synth_sparse_data(n=n, d=d, Lasso=lasso, data_sparsity=sparsity, problem=type, noisy=noisy)
+    noisy = True
+
+    b,A,x = gen_synth_sparse_data(n=n, d=d, Lasso=lasso, Lasso_sparsity=lasso_sparsity, data_sparsity=sparsity, problem=type, noisy=noisy, seed=seed)
 
     write_data(b=b, A=A, x=x, n=n, d=d, filename="Test.txt")
 
     print("A: ", A, "\n")
-    print("b: ", b, "\n")
     print("x: ", x, "\n")
+    print("b: ", b, "\n")
 
 
 if __name__ == "__main__":
