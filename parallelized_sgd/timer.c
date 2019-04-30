@@ -9,7 +9,7 @@
 //  http://man7.org/linux/man-pages/man2/getrusage.2.html
 
 
-int timer_initialize(timer_t *timer, int scope) {
+int timer_initialize(ttimer_t *timer, int scope) {
 	timer->status = TIMER_STATUS_PAUSED;
 	timer->scope = scope;
 	timer->real_cumulative = 0;
@@ -21,14 +21,14 @@ int timer_initialize(timer_t *timer, int scope) {
 }
 
 
-int timer_deinitialize(timer_t *timer) {
+int timer_deinitialize(ttimer_t *timer) {
 	free(timer->start_time_tspec);
 	free(timer->start_time_rusg);
 	return 0;
 }
 
 
-int timer_start(timer_t *timer) {
+int timer_start(ttimer_t *timer) {
 	if (timer->status != TIMER_STATUS_PAUSED)
 		return -1;
 	// Get start times
@@ -36,7 +36,12 @@ int timer_start(timer_t *timer) {
 	rc = clock_gettime(CLOCK_MONOTONIC, timer->start_time_tspec);
 	if (rc)
 		return rc;
-	int who = RUSAGE_SELF; // TODO (timer->scope == TIMER_SCOPE_PROCESS) ? RUSAGE_SELF : RUSAGE_THREAD;
+#ifdef __linux__
+	int who = (timer->scope == TIMER_SCOPE_PROCESS) ? RUSAGE_SELF : RUSAGE_THREAD;
+#endif // __linux__
+#ifdef __APPLE__
+	int who = RUSAGE_SELF;
+#endif // __APPLE__
 	rc = getrusage(who, timer->start_time_rusg);
 	if (rc)
 		return rc;
@@ -46,7 +51,7 @@ int timer_start(timer_t *timer) {
 }
 
 
-int timer_pause(timer_t *timer) {
+int timer_pause(ttimer_t *timer) {
 	if (timer->status != TIMER_STATUS_RUNNING)
 		return 0;
 	// Read current times
@@ -56,7 +61,12 @@ int timer_pause(timer_t *timer) {
 	rc = clock_gettime(CLOCK_MONOTONIC, &curr_tspec);
 	if (rc)
 		return rc;
-	int who = RUSAGE_SELF; // TODO (timer->scope == TIMER_SCOPE_PROCESS) ? RUSAGE_SELF : RUSAGE_THREAD;
+#ifdef __linux__
+	int who = (timer->scope == TIMER_SCOPE_PROCESS) ? RUSAGE_SELF : RUSAGE_THREAD;
+#endif // __linux__
+#ifdef __APPLE__
+	int who = RUSAGE_SELF;
+#endif // __APPLE__
 	rc = getrusage(who, &curr_rusg);
 	if (rc)
 		return rc;
@@ -73,7 +83,7 @@ int timer_pause(timer_t *timer) {
 }
 
 
-int timer_get_stats(timer_t *timer, timerstats_t *stats) {
+int timer_get_stats(ttimer_t *timer, timerstats_t *stats) {
 	if (timer->status != TIMER_STATUS_PAUSED)
 		return -1;
 	stats->real = (timer->real_cumulative) / ((double) 1000000000L);

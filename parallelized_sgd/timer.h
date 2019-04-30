@@ -12,6 +12,11 @@
 #define _timer_hpp_
 
 
+#ifdef __linux__
+#include <time.h>
+#endif // __linux__
+#ifdef __APPLE__
+#endif // __APPLE__
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -28,7 +33,7 @@ typedef struct _timer_t {
 	long long real_cumulative; // nanoseconds
 	long long user_cumulative; // microseconds
 	long long sys_cumulative; // microseconds
-} timer_t;
+} ttimer_t;
 
 
 typedef struct _timerstats_t {
@@ -42,22 +47,22 @@ typedef struct _timerstats_t {
 
 
 // Initializes the timer struct
-int timer_initialize(timer_t *timer, int scope);
+int timer_initialize(ttimer_t *timer, int scope);
 
 // Deinitializes the timer struct
-int timer_deinitialize(timer_t *timer);
+int timer_deinitialize(ttimer_t *timer);
 
 // Starts/resumes the timer.
 //    The timer must be paused.
-int timer_start(timer_t *timer);
+int timer_start(ttimer_t *timer);
 
 // Pauses/stops the timer.
 //    If timer is already paused, no op occurs.
-int timer_pause(timer_t *timer);
+int timer_pause(ttimer_t *timer);
 
 // Returns the timer's stats at the current state.
 //    The timer must be paused.
-int timer_get_stats(timer_t *timer, timerstats_t *stats);
+int timer_get_stats(ttimer_t *timer, timerstats_t *stats);
 
 // Returns time elapsed in seconds.
 double timer_get_elapsed(long long cumulative_start, long long cumulative_end);

@@ -39,11 +39,15 @@ typedef struct _algowrapperargs_t {
 static void* algo_wrapper(void *wrapperargs) {
 	int rc;
 	int log_step; // # iters between logging
-	timer_t timer;
+	ttimer_t timer;
 	algowrapperargs_t *args = (algowrapperargs_t *) wrapperargs;
 	log_step = args->num_iters / NUM_LOG_POINTS;
-	// timer_initialize(&timer, TIMER_SCOPE_THREAD);
-	timer_initialize(&timer, TIMER_SCOPE_PROCESS); // TODO change this to thread
+#ifdef __linux__
+	timer_initialize(&timer, TIMER_SCOPE_THREAD);
+#endif // __linux__
+#ifdef __APPLE__
+	timer_initialize(&timer, TIMER_SCOPE_PROCESS);
+#endif // __APPLE__
 
 	// Wait at starting line for release by condition
 	pthread_mutex_lock(&sync_start_mutex);
@@ -85,7 +89,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	pthread_t *threads;
 	pthread_attr_t attr;
 	void *status;
-	timer_t main_thread_timer;
+	ttimer_t main_thread_timer;
 	pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
 	pthread_cond_t sync_cond = PTHREAD_COND_INITIALIZER;
 
@@ -167,7 +171,7 @@ int log_initialize(log_t *log, int num_data_features) {
 		log->iterates[i] = iterate;
 	}
 	// Alloc timestamp array
-	log->timestamps = (timer_t *) malloc(NUM_LOG_POINTS*sizeof(timer_t));
+	log->timestamps = (ttimer_t *) malloc(NUM_LOG_POINTS*sizeof(ttimer_t));
 	log->size = 0;
 	log->capacity = NUM_LOG_POINTS;
 	log->num_data_features = num_data_features;
