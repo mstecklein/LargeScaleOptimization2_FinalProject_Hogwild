@@ -67,5 +67,9 @@ int timer_get_stats(ttimer_t *timer, timerstats_t *stats);
 // Returns time elapsed in seconds.
 double timer_get_elapsed(long long cumulative_start, long long cumulative_end);
 
+// Returns the timer's stats for the internal gradient
+//   and coordinate update timers.
+int timer_get_internal_timer_stats(timerstats_t *gradient_stats, timerstats_t *coord_update_stats);
+
 
 #endif // _timer_hpp_

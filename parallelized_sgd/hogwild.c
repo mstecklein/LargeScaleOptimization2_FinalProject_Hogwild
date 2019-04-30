@@ -11,6 +11,9 @@ static sparse_array_t *sparse_sample_grads;
 static double **scratchpad;
 static int num_threads;
 
+static ttimer_t *gradient_timers;
+static ttimer_t *coord_update_timers;
+
 
 static void atomic_decrement(double *dest, double dec_amt) {
 	double ret_val;
@@ -37,26 +40,18 @@ int hogwild(double *iterate, data_t *data, int thread_num) {
 
 	// Evaluate gradient
 	sparse_sample_grads[thread_num].len = sparse_sample_X.len;
+	timer_start(&gradient_timers[thread_num]);
 	gradient(iterate, sparse_sample_X, sample_y, &sparse_sample_grads[thread_num], scratchpad[thread_num]);
-
-	if (rand_index == 20) {
-		printf("-----------------------------------\n");
-		printf("sparse_X:::\n");
-		for (int r = 0; r < 5; r++) {
-			printf("\t%d",r);print_sparse_array(&(data->sparse_X[r]));
-		}
-		printf("Iterate:");print_dense_array(iterate, 4);
-		printf("Sparse X:");print_sparse_array(&sparse_sample_X);
-		printf("y: %f\n", sample_y);
-		printf("Grad:");print_sparse_array(&sparse_sample_grads[thread_num]);
-	}
+	timer_pause(&gradient_timers[thread_num]);
 
 	// Update coordinate individually and atomically
+	timer_start(&coord_update_timers[thread_num]);
 	for (int i = 0; i < sparse_sample_grads[thread_num].len; i++) {
 		int index = sparse_sample_grads[thread_num].pts[i].index;
 		double value = sparse_sample_grads[thread_num].pts[i].value;
 		atomic_decrement(&iterate[index], get_stepsize()*value);
 	}
+	timer_pause(&coord_update_timers[thread_num]);
 	
 	return 0;
 }
@@ -76,6 +71,19 @@ int hogwild_initialize(int num_features, int num_thr) {
 	for (int n = 0; n < num_threads; n++) {
 		scratchpad[n] = (double *) malloc(num_features*sizeof(double));
 	}
+	// Initialize timers
+	gradient_timers = (ttimer_t *) malloc(num_thr * sizeof(ttimer_t));
+	coord_update_timers = (ttimer_t *) malloc(num_thr * sizeof(ttimer_t));
+	for (int n = 0; n < num_threads; n++) {
+#ifdef __linux__
+		timer_initialize(&gradient_timers[n], TIMER_SCOPE_THREAD);
+		timer_initialize(&coord_update_timers[n], TIMER_SCOPE_THREAD);
+#endif // __linux__
+#ifdef __APPLE__
+		timer_initialize(&gradient_timers[n], TIMER_SCOPE_PROCESS);
+		timer_initialize(&coord_update_timers[n], TIMER_SCOPE_PROCESS);
+#endif // __APPLE__
+	}
 	return 0;
 }
 
@@ -91,5 +99,26 @@ int hogwild_deinitialize(void) {
 		free(scratchpad[n]);
 	}
 	free(scratchpad);
+	// Free timers
+	for (int n = 0; n < num_threads; n++) {
+		timer_deinitialize(&gradient_timers[n]);
+		timer_deinitialize(&coord_update_timers[n]);
+	}
+	free(gradient_timers);
+	free(coord_update_timers);
+	return 0;
+}
+
+
+int timer_get_internal_timer_stats(timerstats_t *gradient_stats, timerstats_t *coord_update_stats) {
+	int rc;
+	for (int n = 0; n < num_threads; n++) {
+		rc = timer_get_stats(&gradient_timers[n], &gradient_stats[n]);
+		if (rc)
+			return rc;
+		rc = timer_get_stats(&coord_update_timers[n], &coord_update_stats[n]);
+		if (rc)
+			return rc;
+	}
 	return 0;
 }

@@ -88,7 +88,7 @@ static void* algo_wrapper(void *wrapperargs) {
 }
 
 
-int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerstats_t *main_thread_stats, timerstats_t *treads_stats_arr) {
+int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerstats_t *main_thread_stats, timerstats_t *threads_stats_array, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array) {
 	int rc;
 	algowrapperargs_t *args;
 	pthread_t *threads;
@@ -120,7 +120,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 			args[thread_num].threadjob = THREADJOB_NONE;
 			args[thread_num].log = NULL;
 		}
-		args[thread_num].threadstats = &treads_stats_arr[thread_num];
+		args[thread_num].threadstats = &threads_stats_array[thread_num];
 		args[thread_num].data = data;
 		args[thread_num].sync_cond = &sync_cond;
 		args[thread_num].sync_mutex = &sync_mutex;
@@ -149,6 +149,9 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	// Stop main thread timer
 	timer_pause(&main_thread_timer);
 	timer_get_stats(&main_thread_timer, main_thread_stats);
+
+	// Get gradient / coord updt stats
+	timer_get_internal_timer_stats(gradient_stats_array, coord_update_stats_array);
 
 	// Clean up
 	free(threads);
@@ -262,7 +265,7 @@ static int write_results_log(int num_threads, log_t *log) {
 }
 
 
-static int write_results_threads_stats(int num_threads, timerstats_t main_thread_stats, timerstats_t *treads_stats_arr) {
+static int write_results_threads_stats(int num_threads, timerstats_t main_thread_stats, timerstats_t *threads_stats_arr) {
 	FILE *fp;
 	char filename[30];
 	sprintf(filename, "threadstats_%dthread.csv", num_threads);
@@ -275,19 +278,46 @@ static int write_results_threads_stats(int num_threads, timerstats_t main_thread
 	fprintf(fp, "Main, %f, %f, %f\n", main_thread_stats.real, main_thread_stats.user, main_thread_stats.sys);
 	// Write other threads stats
 	for (int i = 0; i < num_threads; i++) {
-		fprintf(fp, "Thread%d, %f, %f, %f\n", i, treads_stats_arr[i].real, treads_stats_arr[i].user, treads_stats_arr[i].sys);
+		fprintf(fp, "Thread%d, %f, %f, %f\n", i, threads_stats_arr[i].real, threads_stats_arr[i].user, threads_stats_arr[i].sys);
 	}
 	fclose(fp);
 	return 0;
 }
 
 
-int write_results_to_file(int num_threads, log_t *log, timerstats_t main_thread_stats, timerstats_t *treads_stats_arr) {
+static int write_results_grad_coord(int num_threads, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array) {
+	FILE *fp;
+	char filename[30];
+	sprintf(filename, "gradcoord_%dthread.csv", num_threads);
+	fp = fopen(filename,"w");
+	if (!fp)
+		return -1;
+	// Write header
+	fprintf(fp, "Threadname, Grad_Real, Grad_User, Grad_Sys, Coord_Real, Coord_User, Coord_Sys\n");
+	// Write threads stats
+	for (int i = 0; i < num_threads; i++) {
+		fprintf(fp, "Thread%d, %f, %f, %f, %f, %f, %f\n", i,
+				gradient_stats_array[i].real,
+				gradient_stats_array[i].user,
+				gradient_stats_array[i].sys,
+				coord_update_stats_array[i].real,
+				coord_update_stats_array[i].user,
+				coord_update_stats_array[i].sys);
+	}
+	fclose(fp);
+	return 0;
+}
+
+
+int write_results_to_file(int num_threads, log_t *log, timerstats_t main_thread_stats, timerstats_t *threads_stats_array, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array) {
 	int rc;
 	rc = write_results_log(num_threads, log);
 	if (rc)
 		return rc;
-	rc = write_results_threads_stats(num_threads, main_thread_stats, treads_stats_arr);
+	rc = write_results_threads_stats(num_threads, main_thread_stats, threads_stats_array);
+	if (rc)
+		return rc;
+	rc = write_results_grad_coord(num_threads, gradient_stats_array, coord_update_stats_array);
 	if (rc)
 		return rc;
 	return 0;
