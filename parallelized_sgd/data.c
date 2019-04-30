@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "data.h"
+#include "problem.h"
 #include "psgd_analysis.h"
 
 

@@ -9,8 +9,8 @@
 #include "data.h"
 
 
-#define NUM_TOTAL_ITER	100000
-#define NUM_LOG_POINTS	20
+#define NUM_TOTAL_ITER	10000000
+#define NUM_LOG_POINTS	50
 
 
 typedef struct _problem_t {

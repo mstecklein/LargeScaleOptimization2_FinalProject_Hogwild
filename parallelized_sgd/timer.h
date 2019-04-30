@@ -59,5 +59,8 @@ int timer_pause(timer_t *timer);
 //    The timer must be paused.
 int timer_get_stats(timer_t *timer, timerstats_t *stats);
 
+// Returns time elapsed in seconds.
+double timer_get_elapsed(long long cumulative_start, long long cumulative_end);
+
 
 #endif // _timer_hpp_

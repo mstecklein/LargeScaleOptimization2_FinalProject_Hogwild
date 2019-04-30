@@ -10,9 +10,6 @@
 
 
 
-int write_results_to_file(int num_threads, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats);
-
-
 
 
 int main(int argc, char **argv) {
@@ -65,18 +62,4 @@ int main(int argc, char **argv) {
 	}
 	log_free(&log);
 	dealloc_data(&data);
-}
-
-
-
-
-
-int write_results_to_file(int num_threads, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
-	// TODO redo this with proper functionality
-	printf("HERE in write_results_to_file\n");
-	for (int i = 0; i < log->size; i++) {
-		printf("%d:  %llu\n", i, log->timestamps[i].real_cumulative);
-		print_dense_array(log->iterates[i], log->num_data_features);
-	}
-	return -1; // TODO
 }

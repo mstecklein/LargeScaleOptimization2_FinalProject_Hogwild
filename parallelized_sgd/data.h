@@ -6,6 +6,9 @@
 #define _data_h_
 
 
+#include "timer.h"
+
+
 // Sparse matrices can be written in a more compact structure as follows:
 //   For each row of the dense matrix, create a list of only the non-zero
 //   values of that row. Each entry of the list is a "point" as defined

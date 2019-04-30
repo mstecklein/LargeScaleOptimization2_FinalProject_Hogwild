@@ -81,3 +81,8 @@ int timer_get_stats(timer_t *timer, timerstats_t *stats) {
 	stats->sys  = (timer->sys_cumulative)  / ((double) 1000000L);
 	return 0;
 }
+
+
+double timer_get_elapsed(long long cumulative_start, long long cumulative_end) {
+	return (cumulative_end - cumulative_start ) / ((double) 1000000000L);
+}

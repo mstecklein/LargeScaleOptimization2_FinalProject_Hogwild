@@ -208,3 +208,74 @@ void print_sparse_array(sparse_array_t *arr) {
 	}
 	printf("]\n");
 }
+
+
+
+
+
+//
+// Writing results to files:::
+//
+
+
+static int write_results_log(int num_threads, log_t *log) {
+	FILE *fp;
+	char filename[30];
+	sprintf(filename, "log_%dthreads.csv", num_threads);
+	fp = fopen(filename,"w");
+	if (!fp)
+		return -1;
+	// Write header
+	fprintf(fp, "Time, Iterate\n");
+	// Write each log
+	double start_cumulative = log->timestamps[0].real_cumulative;
+	for (int i = 0; i < NUM_LOG_POINTS; i++) {
+		// Write real time elapsed
+		double time_elapsed = timer_get_elapsed(start_cumulative, log->timestamps[i].real_cumulative);
+		fprintf(fp, "%f, ", time_elapsed);
+		// Write iterate
+		fprintf(fp, "[");
+		for (int j = 0; j < log->num_data_features; j++) {
+			fprintf(fp, "%f", log->iterates[i][j]);
+			if (j != log->num_data_features-1) {
+				fprintf(fp, ", ");
+			}
+		}
+		fprintf(fp, "]");
+		fprintf(fp, "\n");
+	}
+	fclose(fp);
+	return 0;
+}
+
+
+static int write_results_threads_stats(int num_threads, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
+	FILE *fp;
+	char filename[30];
+	sprintf(filename, "threadstats_%dthread.csv", num_threads);
+	fp = fopen(filename,"w");
+	if (!fp)
+		return -1;
+	// Write header
+	fprintf(fp, "Threadname, Real, User, Sys\n");
+	// Write main thread stats
+	fprintf(fp, "Main, %f, %f, %f\n", main_thread_stats->real, main_thread_stats->user, main_thread_stats->sys);
+	// Write other threads stats
+	for (int i = 0; i < num_threads; i++) {
+		fprintf(fp, "Thread%d, %f, %f, %f\n", i, threads_stats[i]->real, threads_stats[i]->user, threads_stats[i]->sys);
+	}
+	fclose(fp);
+	return 0;
+}
+
+
+int write_results_to_file(int num_threads, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
+	int rc;
+	rc = write_results_log(num_threads, log);
+	if (rc)
+		return rc;
+	rc = write_results_threads_stats(num_threads, main_thread_stats, threads_stats);
+	if (rc)
+		return rc;
+	return 0;
+}
