@@ -81,7 +81,7 @@ static void* algo_wrapper(void *wrapperargs) {
 
 int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
 	int rc;
-	algowrapperargs_t args;
+	algowrapperargs_t *args;
 	pthread_t *threads;
 	pthread_attr_t attr;
 	void *status;
@@ -90,6 +90,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	pthread_cond_t sync_cond = PTHREAD_COND_INITIALIZER;
 
 	// Alloc, initialize, and set thread joinable
+	args = (algowrapperargs_t *) malloc(num_threads * sizeof(algowrapperargs_t));
 	threads = (pthread_t *) malloc(num_threads * sizeof(pthread_t));
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -99,22 +100,24 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 		return rc;
 
 	// Start wrapper threads
-	args.num_iters = NUM_TOTAL_ITER / num_threads;
-	args.data = data;
-	args.sync_cond = &sync_cond;
-	args.sync_mutex = &sync_mutex;
-	args.iterate = (double *) malloc(data->num_features*sizeof(double));
-	memset(args.iterate, 0, data->num_features*sizeof(double));
 	for (int thread_num = 0; thread_num < num_threads; thread_num++) {
-		args.thread_num = thread_num;
+		// Fill args for this thread
+		args[thread_num].num_iters = NUM_TOTAL_ITER / num_threads;
+		args[thread_num].thread_num = thread_num;
 		if (!thread_num) {
-			args.threadjob = THREADJOB_RECORD_ITERATES;
-			args.log = log;
+			args[thread_num].threadjob = THREADJOB_RECORD_ITERATES;
+			args[thread_num].log = log;
 		} else {
-			args.threadjob = THREADJOB_NONE;
-			args.log = NULL;
+			args[thread_num].threadjob = THREADJOB_NONE;
+			args[thread_num].log = NULL;
 		}
-		rc = pthread_create(&threads[thread_num], &attr, algo_wrapper, (void *)&args);
+		args[thread_num].data = data;
+		args[thread_num].sync_cond = &sync_cond;
+		args[thread_num].sync_mutex = &sync_mutex;
+		args[thread_num].iterate = (double *) malloc(data->num_features*sizeof(double));
+		memset(args[thread_num].iterate, 0, data->num_features*sizeof(double));
+		// Create thread with args
+		rc = pthread_create(&threads[thread_num], &attr, algo_wrapper, (void *)&args[thread_num]);
 		if (rc)
 			return rc;
 	}
@@ -249,7 +252,7 @@ static int write_results_log(int num_threads, log_t *log) {
 }
 
 
-static int write_results_threads_stats(int num_threads, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
+static int write_results_threads_stats(int num_threads, timerstats_t main_thread_stats, timerstats_t *threads_stats) {
 	FILE *fp;
 	char filename[30];
 	sprintf(filename, "threadstats_%dthread.csv", num_threads);
@@ -259,17 +262,17 @@ static int write_results_threads_stats(int num_threads, timerstats_t *main_threa
 	// Write header
 	fprintf(fp, "Threadname, Real, User, Sys\n");
 	// Write main thread stats
-	fprintf(fp, "Main, %f, %f, %f\n", main_thread_stats->real, main_thread_stats->user, main_thread_stats->sys);
+	fprintf(fp, "Main, %f, %f, %f\n", main_thread_stats.real, main_thread_stats.user, main_thread_stats.sys);
 	// Write other threads stats
 	for (int i = 0; i < num_threads; i++) {
-		fprintf(fp, "Thread%d, %f, %f, %f\n", i, threads_stats[i]->real, threads_stats[i]->user, threads_stats[i]->sys);
+		fprintf(fp, "Thread%d, %f, %f, %f\n", i, threads_stats[i].real, threads_stats[i].user, threads_stats[i].sys);
 	}
 	fclose(fp);
 	return 0;
 }
 
 
-int write_results_to_file(int num_threads, log_t *log, timerstats_t *main_thread_stats, timerstats_t **threads_stats) {
+int write_results_to_file(int num_threads, log_t *log, timerstats_t main_thread_stats, timerstats_t *threads_stats) {
 	int rc;
 	rc = write_results_log(num_threads, log);
 	if (rc)

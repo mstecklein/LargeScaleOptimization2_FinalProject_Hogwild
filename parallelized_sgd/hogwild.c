@@ -57,7 +57,7 @@ int hogwild(double *iterate, data_t *data, int thread_num) {
 		double value = sparse_sample_grads[thread_num].pts[i].value;
 		atomic_decrement(&iterate[index], get_stepsize()*value);
 	}
-
+	
 	return 0;
 }
 
