@@ -92,6 +92,7 @@ Shuffles the elements in each row of a matrix independently
 
 -Arguments-
 arr: the array to shuffle
+seed: random seed for reproducibility
 """
 def shuffle_rows(arr, seed=1000):
     np.random.seed(seed)
