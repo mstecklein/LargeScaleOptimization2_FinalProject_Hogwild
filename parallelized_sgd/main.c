@@ -20,13 +20,22 @@ int main(int argc, char **argv) {
 	log_t log;
 
 	// First argument is number of threads to run,
-	//    second argument is the data filename
+	//    second argument is the data filename,
+	//    third argument is whether to track gradient
+	//    and coordinate update stats (Any argument here
+	//    sets it to true, defaults to false. Tracking
+	//    these stats is very intrusive).
 	if (argc < 3) {
-		printf("Usage: ./run <num_threads> <data_filename>\n");
+		printf("Usage: ./run <num_threads> <data_filename> [record gradient/update stats]\n");
 		exit(-1);
 	}
 	num_threads = atoi(argv[1]);
 	filename = argv[2];
+	if (argc >= 4) {
+		set_track_gradient_coordupdate(1);
+	} else {
+		set_track_gradient_coordupdate(0);
+	}
 
 	// Read data file
 	rc = read_and_alloc_data(filename, &data);

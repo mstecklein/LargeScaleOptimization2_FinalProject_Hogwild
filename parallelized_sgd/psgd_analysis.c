@@ -20,8 +20,13 @@
 #define THREADJOB_RECORD_ITERATES	1
 
 
+// Condition vars to start all threads at the same time
 pthread_cond_t sync_start_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t sync_start_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// Vars to signal when all threads finish
+pthread_mutex_t active_thread_cnt_mutex = PTHREAD_MUTEX_INITIALIZER;
+int active_thread_cnt; // to be lock with above mutex
 
 
 typedef struct _algowrapperargs_t {
@@ -81,9 +86,16 @@ static void* algo_wrapper(void *wrapperargs) {
 		}
 	}
 	
+	// Handle this thread's timer and stats
 	timer_pause(&timer);
 	timer_get_stats(&timer, args->threadstats);
 	timer_deinitialize(&timer);
+
+	// Signal that this thread has finished
+	pthread_mutex_lock(&active_thread_cnt_mutex);
+	active_thread_cnt--;
+	pthread_mutex_unlock(&active_thread_cnt_mutex);
+
 	pthread_exit(NULL);
 }
 
@@ -92,17 +104,15 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	int rc;
 	algowrapperargs_t *args;
 	pthread_t *threads;
-	pthread_attr_t attr;
 	void *status;
 	ttimer_t main_thread_timer;
 	pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
 	pthread_cond_t sync_cond = PTHREAD_COND_INITIALIZER;
 
-	// Alloc, initialize, and set thread joinable
+	// Initialize and alloc
+	active_thread_cnt = num_threads;
 	args = (algowrapperargs_t *) malloc(num_threads * sizeof(algowrapperargs_t));
 	threads = (pthread_t *) malloc(num_threads * sizeof(pthread_t));
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	timer_initialize(&main_thread_timer, TIMER_SCOPE_PROCESS);
 	rc = current_problem.algo_init_func(data->num_features, num_threads);
 	if (rc)
@@ -127,7 +137,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 		args[thread_num].iterate = (double *) malloc(data->num_features*sizeof(double));
 		memset(args[thread_num].iterate, 0, data->num_features*sizeof(double));
 		// Create thread with args
-		rc = pthread_create(&threads[thread_num], &attr, algo_wrapper, (void *)&args[thread_num]);
+		rc = pthread_create(&threads[thread_num], NULL, algo_wrapper, (void *)&args[thread_num]);
 		if (rc)
 			return rc;
 	}
@@ -140,11 +150,13 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 		return rc;
 
 	// Wait for threads to finish
-	for (int thread_num = 0; thread_num < num_threads; thread_num++) {
-		rc = pthread_join(threads[thread_num], &status);
-		if (rc)
-			return rc;
+	pthread_mutex_lock(&active_thread_cnt_mutex);
+	while (active_thread_cnt > 0) {
+		pthread_mutex_unlock(&active_thread_cnt_mutex);
+		sleep(1);
+		pthread_mutex_lock(&active_thread_cnt_mutex);
 	}
+	pthread_mutex_unlock(&active_thread_cnt_mutex);
 
 	// Stop main thread timer
 	timer_pause(&main_thread_timer);
@@ -156,9 +168,19 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	// Clean up
 	free(threads);
 	timer_deinitialize(&main_thread_timer);
-	pthread_attr_destroy(&attr);
 	current_problem.algo_deinit_func();
 	return 0;
+}
+
+
+static int track_gradientupdate;
+
+void set_track_gradient_coordupdate(int true_false) {
+	track_gradientupdate = true_false;
+}
+
+int track_gradient_coordupdate(void) {
+	return track_gradientupdate;
 }
 
 
@@ -292,17 +314,22 @@ static int write_results_grad_coord(int num_threads, timerstats_t *gradient_stat
 	fp = fopen(filename,"w");
 	if (!fp)
 		return -1;
-	// Write header
-	fprintf(fp, "Threadname, Grad_Real, Grad_User, Grad_Sys, Coord_Real, Coord_User, Coord_Sys\n");
-	// Write threads stats
-	for (int i = 0; i < num_threads; i++) {
-		fprintf(fp, "Thread%d, %f, %f, %f, %f, %f, %f\n", i,
-				gradient_stats_array[i].real,
-				gradient_stats_array[i].user,
-				gradient_stats_array[i].sys,
-				coord_update_stats_array[i].real,
-				coord_update_stats_array[i].user,
-				coord_update_stats_array[i].sys);
+	if (track_gradient_coordupdate()) {
+		// Write header
+		fprintf(fp, "Threadname, Grad_Real, Grad_User, Grad_Sys, Coord_Real, Coord_User, Coord_Sys\n");
+		// Write threads stats
+		for (int i = 0; i < num_threads; i++) {
+			fprintf(fp, "Thread%d, %f, %f, %f, %f, %f, %f\n", i,
+					gradient_stats_array[i].real,
+					gradient_stats_array[i].user,
+					gradient_stats_array[i].sys,
+					coord_update_stats_array[i].real,
+					coord_update_stats_array[i].user,
+					coord_update_stats_array[i].sys);
+		}
+	} else {
+		// Write note that we didn't track this info
+		fprintf(fp, "No stats available. Did not track them.");
 	}
 	fclose(fp);
 	return 0;
