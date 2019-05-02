@@ -38,7 +38,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
     FILE* fp = fopen(filename, "r");
     if (fp == NULL){
         printf("Could not open %s", filename);
-        return 1;
+        return -1;
     }
 
     //Read in the number of samples and features, respectively
@@ -48,28 +48,28 @@ int read_and_alloc_data(char *filename, data_t *data) {
     if (fscanf(fp, "%d", &n) == EOF){
         if (feof(fp)){
             printf("Problem while parsing %s - EOF reached while reading n", filename);
-            return 1;
+            return -1;
         }
         else{
             printf("Problem while parsing %s - error occurred while reading n", filename);
-            return 1;
+            return -1;
         }
     }
 
     if (fscanf(fp, "%d", &d) == EOF){
         if (feof(fp)){
             printf("Problem while parsing %s - EOF reached while reading d", filename);
-            return 1;
+            return -1;
         }
         else{
             printf("Problem while parsing %s - error occurred while reading d", filename);
-            return 1;
+            return -1;
         }
     }
 
-    if(n <= 0 || d <= 0 ||){
+    if(n <= 0 || d <= 0){
         printf("Problem while parsing %s - n or d has illegal value", filename);
-        return 1;
+        return -1;
     }
 
     //allocate space for the arrays
@@ -77,7 +77,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
     data->y = (double *) malloc(n * sizeof(double));
     data->X = (double **) malloc(n * sizeof(double *));
     for(int r = 0; r < n; r++){
-        data->X[r] = malloc(d * sizeof(double))
+        data->X[r] = malloc(d * sizeof(double));
     }
 
     data->num_samples = n;
@@ -91,11 +91,11 @@ int read_and_alloc_data(char *filename, data_t *data) {
     }
     if(feof(fp)){
         printf("Problem while parsing %s - EOF reached while reading optimal iterate", filename);
-        return 1;
+        return -1;
     }
     else if(ferror(fp)){
         printf("Problem while parsing %s - error occurred while reading optimal iterate", filename);
-        return 1;
+        return -1;
     }
 
     //read and throw away last digit - should be a 0
@@ -103,12 +103,12 @@ int read_and_alloc_data(char *filename, data_t *data) {
 
     if(fscanf(fp, "%d", &trash) == EOF || trash != 0){
         printf("Problem while parsing %s - error or illegal value while reading trash digit", filename);
-        return 1;
+        return -1;
     }
 
     //populate the data and labels
-    c=0
-    int r = 0
+    c=0;
+    int r = 0;
 
     while(r < n){
         while(c < d && fscanf(fp, "%f", &(data->X[r][c]))!=EOF){
@@ -116,12 +116,12 @@ int read_and_alloc_data(char *filename, data_t *data) {
         }
         if(ferror(fp) || feof(fp)){
             printf("Problem while parsing %s - error or EOF occurred while reading X", filename);
-            return 1;
+            return -1;
         }
 
         if(fscanf(fp, "%f", &(data->y[r]))==EOF){
             printf("Problem while parsing %s - error or EOF occurred while reading y", filename);
-            return 1;
+            return -1;
         }
 
         c = 0;
@@ -168,8 +168,21 @@ int read_and_alloc_data(char *filename, data_t *data) {
 }
 
 int dealloc_data(data_t *data) {
-	// TODO
-	return -1;
+
+	//free the rows of X and sparse X first
+	for (int r = 0; r < data->num_samples; r++){
+        free(data->X[r]);
+        free(data->sparse_X[r].pts);
+
+	}
+
+	//free all the references to arrays
+	free(data->X);
+	free(data->sparse_X);
+	free(data->y);
+	free(data->optimal_iterate);
+
+	return 0;
 }
 
 
