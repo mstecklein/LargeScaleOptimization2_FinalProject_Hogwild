@@ -7,6 +7,12 @@
 #include "hogwild.h"
 
 
+// This will be a lower bound on the number of collisions. Since
+// it is not made thread-safe, threads may overwrite each others'
+// increments.
+unsigned int hogwild_num_atomic_dec_collisions = 0;
+
+
 static sparse_array_t *sparse_sample_grads;
 static double **scratchpad;
 static int num_threads;
@@ -27,8 +33,8 @@ static void atomic_decrement(double *dest, double dec_amt) {
 		orig_val = *dest;
 		dec_val = orig_val - dec_amt;
 		__atomic_exchange(dest, &dec_val, &ret_val, __ATOMIC_RELAXED);
-		if (ret_val != orig_val) // TODO remove this
-			printf("A collision occurred in atomic_decrement\n"); 
+		if (ret_val != orig_val)
+			hogwild_num_atomic_dec_collisions++;
 	} while (ret_val != orig_val);
 }
 
@@ -125,6 +131,8 @@ int hogwild_deinitialize(void) {
 	free(coord_update_timers);
 	// Free RNG seed states
 	free(rng_seedp);
+	// Print lower bound on # of atomic_decrement collisions
+	printf("There were at least %d collisions in atomic_decrement\n", hogwild_num_atomic_dec_collisions);
 	return 0;
 }
 
