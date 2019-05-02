@@ -100,6 +100,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	ttimer_t main_thread_timer;
 	pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
 	pthread_cond_t sync_cond = PTHREAD_COND_INITIALIZER;
+	double *iterate;
 
 	// Initialize, alloc, and set thread joinable
 	args = (algowrapperargs_t *) malloc(num_threads * sizeof(algowrapperargs_t));
@@ -107,6 +108,8 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	pthread_attr_init(&attr);	
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	timer_initialize(&main_thread_timer, TIMER_SCOPE_PROCESS);
+	iterate = (double *) malloc(data->num_features*sizeof(double));
+	memset(iterate, 0, data->num_features*sizeof(double));
 	rc = current_problem.algo_init_func(data->num_features, num_threads);
 	if (rc)
 		return rc;
@@ -127,8 +130,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 		args[thread_num].data = data;
 		args[thread_num].sync_cond = &sync_cond;
 		args[thread_num].sync_mutex = &sync_mutex;
-		args[thread_num].iterate = (double *) malloc(data->num_features*sizeof(double));
-		memset(args[thread_num].iterate, 0, data->num_features*sizeof(double));
+		args[thread_num].iterate = iterate;
 		// Create thread with args
 		rc = pthread_create(&threads[thread_num], &attr, algo_wrapper, (void *)&args[thread_num]);
 		if (rc)
@@ -158,6 +160,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 
 	// Clean up
 	free(threads);
+	free(iterate);
 	timer_deinitialize(&main_thread_timer);
 	pthread_attr_destroy(&attr);
 	current_problem.algo_deinit_func();
