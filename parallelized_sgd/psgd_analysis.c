@@ -34,7 +34,7 @@ typedef struct _algowrapperargs_t {
 	data_t *data;
 	pthread_cond_t *sync_cond;
 	pthread_mutex_t *sync_mutex;
-	double *iterate; // array of length data->num_features
+	thread_array_t /*double*/ iterate; // array of length data->num_features
 } algowrapperargs_t;
 
 
@@ -69,7 +69,7 @@ static void* algo_wrapper(void *wrapperargs) {
 				if (sz+1 <= args->log->capacity) {
 					// copy iterate value
 					for (int j = 0; j < args->data->num_features; j++) {
-						args->log->iterates[sz][j] = args->iterate[j];
+						args->log->iterates[sz][j] = TA_idx(args->iterate, j, double);
 					}
 					// copy timer
 					timer_pause(&timer);
@@ -100,7 +100,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	ttimer_t main_thread_timer;
 	pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
 	pthread_cond_t sync_cond = PTHREAD_COND_INITIALIZER;
-	double *iterate;
+	thread_array_t /*double*/ iterate;
 
 	// Initialize, alloc, and set thread joinable
 	args = (algowrapperargs_t *) malloc(num_threads * sizeof(algowrapperargs_t));
@@ -108,8 +108,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	pthread_attr_init(&attr);	
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	timer_initialize(&main_thread_timer, TIMER_SCOPE_PROCESS);
-	iterate = (double *) malloc(data->num_features*sizeof(double));
-	memset(iterate, 0, data->num_features*sizeof(double));
+	malloc_thread_array(&iterate, data->num_features);
 	rc = current_problem.algo_init_func(data->num_features, num_threads);
 	if (rc)
 		return rc;
@@ -160,7 +159,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 
 	// Clean up
 	free(threads);
-	free(iterate);
+	free_thread_array(&iterate);
 	timer_deinitialize(&main_thread_timer);
 	pthread_attr_destroy(&attr);
 	current_problem.algo_deinit_func();

@@ -7,6 +7,7 @@
 #define _problem_h_
 
 #include "data.h"
+#include "thread_array.h"
 
 
 #define NUM_TOTAL_ITER	10000000
@@ -14,9 +15,9 @@
 
 
 typedef struct _problem_t {
-	int (*gradient)(double *iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad, double *scratchpad);
+	int (*gradient)(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad, double *scratchpad);
 	// Algorithm:
-	int (*algo_update_func)(double*, data_t*, int);
+	int (*algo_update_func)(thread_array_t, data_t*, int);
 	int (*algo_init_func)(int, int);
 	int (*algo_deinit_func)(void);
 	double stepsize;
@@ -36,7 +37,7 @@ double get_stepsize(void);
 
 // Returns the gradient for a sample given the current iterate,
 //   the sampled data point, and its respective label.
-int gradient(double *iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad, double *scratchpad);
+int gradient(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad, double *scratchpad);
 
 
 #endif // _problem_h_

@@ -16,10 +16,10 @@ int scale_sparse(sparse_array_t *result, sparse_array_t sparse_v1, double scalar
 	return 0;
 }
 
-double dot_sparse_dense(sparse_array_t sparse_v1, double* dense_v2){
+double dot_sparse_dense(sparse_array_t sparse_v1, thread_array_t dense_v2){
 	double sum = 0;
 	for (int i = 0; i < sparse_v1.len; i++) {
-		sum += sparse_v1.pts[i].value * dense_v2[sparse_v1.pts[i].index];
+		sum += sparse_v1.pts[i].value * TA_idx(dense_v2, sparse_v1.pts[i].index, double);
 	}
 	return sum;
 }

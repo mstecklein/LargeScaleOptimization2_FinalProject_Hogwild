@@ -6,9 +6,10 @@
 #define _hogwild_h_
 
 #include "timer.h"
+#include "thread_array.h"
 
 
-int hogwild(double *iterate, data_t *data, int thread_num);
+int hogwild(thread_array_t iterate, data_t *data, int thread_num);
 
 
 int hogwild_initialize(int num_features, int num_threads);
