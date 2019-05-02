@@ -1,12 +1,5 @@
-/*
- * TODO
- */
-
 #ifndef _data_h_
 #define _data_h_
-
-
-//#include "timer.h"
 
 
 // Sparse matrices can be written in a more compact structure as follows:

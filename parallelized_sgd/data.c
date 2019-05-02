@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "data.h"
-//#include "problem.h"
-//#include "psgd_analysis.h"
 
 
 static int create_sparse_mat(double **M, sparse_array_t **M_sparse, int num_rows, int num_cols) {
@@ -32,7 +30,6 @@ static int create_sparse_mat(double **M, sparse_array_t **M_sparse, int num_rows
 }
 
 int read_and_alloc_data(char *filename, data_t *data) {
-	// TODO redo this to read from filename
 
     FILE* fp = fopen(filename, "r");
     if (fp == NULL){
