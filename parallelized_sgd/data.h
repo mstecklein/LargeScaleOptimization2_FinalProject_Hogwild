@@ -6,7 +6,7 @@
 #define _data_h_
 
 
-#include "timer.h"
+//#include "timer.h"
 
 
 // Sparse matrices can be written in a more compact structure as follows:
@@ -40,6 +40,8 @@ int read_and_alloc_data(char *filename, data_t *data);
 int dealloc_data(data_t *data);
 
 sparse_point_t * alloc_sparse_array(int len);
+
+void show_data(data_t *data);
 
 
 #endif // _data_h_
