@@ -31,7 +31,6 @@ static int create_sparse_mat(double **M, sparse_array_t **M_sparse, int num_rows
 	return 0;
 }
 
-
 int read_and_alloc_data(char *filename, data_t *data) {
 	// TODO redo this to read from filename
 
@@ -141,7 +140,6 @@ int dealloc_data(data_t *data) {
 	for (int r = 0; r < data->num_samples; r++){
         free(data->X[r]);
         free(data->sparse_X[r].pts);
-
 	}
 
 	//free all the references to arrays
@@ -178,7 +176,6 @@ void show_data(data_t *data){
     }
     printf("\n");
 }
-
 
 sparse_point_t * alloc_sparse_array(int len) {
 	return (sparse_point_t *) malloc(len*sizeof(sparse_point_t));
