@@ -86,7 +86,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
     //populate the optimal iterate
     int c = 0;
 
-    while(c < d && fscanf(fp, "%f", &(data->optimal_iterate[c])) != EOF){
+    while(c < d && fscanf(fp, "%lf", &(data->optimal_iterate[c])) != EOF){
         c++;
     }
     if(feof(fp)){
@@ -99,9 +99,9 @@ int read_and_alloc_data(char *filename, data_t *data) {
     }
 
     //read and throw away last digit - should be a 0
-    int trash;
+    double trash;
 
-    if(fscanf(fp, "%d", &trash) == EOF || trash != 0){
+    if(fscanf(fp, "%lf", &trash) == EOF || trash != 0){
         printf("Problem while parsing %s - error or illegal value while reading trash digit", filename);
         return -1;
     }
@@ -111,7 +111,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
     int r = 0;
 
     while(r < n){
-        while(c < d && fscanf(fp, "%f", &(data->X[r][c]))!=EOF){
+        while(c < d && fscanf(fp, "%lf", &(data->X[r][c]))!=EOF){
             c++;
         }
         if(ferror(fp) || feof(fp)){
@@ -119,7 +119,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
             return -1;
         }
 
-        if(fscanf(fp, "%f", &(data->y[r]))==EOF){
+        if(fscanf(fp, "%lf", &(data->y[r]))==EOF){
             printf("Problem while parsing %s - error or EOF occurred while reading y", filename);
             return -1;
         }
@@ -130,41 +130,9 @@ int read_and_alloc_data(char *filename, data_t *data) {
 
     create_sparse_mat(data->X, &(data->sparse_X), data->num_samples, data->num_features);
 
+    fclose(fp);
+
     return 0;
-
-
-    /*
-    double X_data[20] ={1,0,0,0,
-                        0,1,0,0,
-                        0,0,1,0,
-                        0,0,0,1,
-                        1,0,0,1};
-	double opt_iter[4] = {1, 1, 1, 1};
-    double y_data[5] = {1, 1, 1, 1, 2};
-
-	data->num_samples = 5;
-	data->num_features = 4;
-
-	data->optimal_iterate = (double *) malloc(data->num_features*sizeof(double));
-	for (int i = 0; i < data->num_features; i++)
-		data->optimal_iterate[i] = opt_iter[i];
-
-	data->X = (double **) malloc(data->num_samples*sizeof(double *));
-	for (int r = 0; r < data->num_samples; r++) {
-		data->X[r] = (double *) malloc(data->num_features*sizeof(double));
-		for (int c = 0; c < data->num_features; c++) {
-			data->X[r][c] = X_data[r*data->num_features + c];
-		}
-	}
-
-	data->y = (double *) malloc(data->num_samples*sizeof(double));
-	for (int i = 0; i < data->num_samples; i++)
-		data->y[i] = y_data[i];
-
-	create_sparse_mat(data->X, &(data->sparse_X), data->num_samples, data->num_features);
-
-	return 0;
-	*/
 }
 
 int dealloc_data(data_t *data) {
@@ -183,6 +151,32 @@ int dealloc_data(data_t *data) {
 	free(data->optimal_iterate);
 
 	return 0;
+}
+
+void show_data(data_t *data){
+    printf("Num Samples: %d\n", data->num_samples);
+    printf("Num Features: %d\n", data->num_features);
+
+    printf("y:\n");
+    for (int r = 0; r < data->num_samples; r++){
+        printf("%f ", data->y[r]);
+    }
+    printf("\n");
+
+    printf("beta:\n");
+    for (int c = 0; c < data->num_features; c++){
+        printf("%f ", data->optimal_iterate[c]);
+    }
+    printf("\n");
+
+    printf("X:\n");
+    for (int r = 0; r < data->num_samples; r++){
+        for (int c = 0; c < data->num_features; c++){
+            printf("%f ", data->X[r][c]);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
 
 
