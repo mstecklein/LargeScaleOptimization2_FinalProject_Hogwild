@@ -40,7 +40,15 @@ static void atomic_decrement(double *dest, double dec_amt) {
 }
 
 
+// TODO remove this:
+static int custom_test_algo(thread_array_t iterate, data_t *data, int thread_num) {
+	return 0; // TODO
+}
+
+
 int hogwild(thread_array_t iterate, data_t *data, int thread_num) {
+	return custom_test_algo(iterate, data, thread_num);
+	/*
 	// Get random sample
 	//    rand_r is reentrant (thread safe)
 	int rand_index = rand_r(&TA_idx(rng_seedp, thread_num, unsigned int)) % data->num_samples;
@@ -70,7 +78,6 @@ int hogwild(thread_array_t iterate, data_t *data, int thread_num) {
 	if (track_gradient_coordupdate()) {
 		timer_pause(&coord_update_timers[thread_num]);
 	}
-	/* TODO uncomment this
 	*/
 	
 	return 0;
