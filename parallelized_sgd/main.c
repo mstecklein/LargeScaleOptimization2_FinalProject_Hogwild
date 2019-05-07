@@ -10,6 +10,7 @@
 #include "hogwild.h"
 #include "naive_psgd.h"
 #include "example_algo.h"
+#include "segmented_hogwild.h"
 
 
 
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
 	if (argc < 7+1) {
 		printf("Usage: ./run <num_threads> <data_filename> <problem type> <algorithm name> <total # iterations> <# log points> <stepsize> [record gradient/update stats]\n");
 		printf("\tValid problem types: linearregression, logisticregression\n");
-		printf("\tValid algorithms: hogwild, exampleindependent, exampleshared, naive\n");
+		printf("\tValid algorithms: hogwild, exampleindependent, exampleshared, naive, segmentedhogwild\n");
 		exit(-1);
 	}
 	int num_threads = atoi(argv[1]);
@@ -82,6 +83,10 @@ int main(int argc, char **argv) {
 		problem.algo_update_func = naive_psgd;
 		problem.algo_init_func = naive_psgd_initialize;
 		problem.algo_deinit_func = naive_psgd_deinitialize;
+	} else if (strcmp(algorithm_name, "segmentedhogwild") == 0) {
+		problem.algo_update_func = segmented_hogwild;
+		problem.algo_init_func = segmented_hogwild_initialize;
+		problem.algo_deinit_func = segmented_hogwild_deinitialize;
 	} else { // default: hogwild
 		printf("WARNING: Unrecognized algorithm. Defaulting to hogwild\n");
 		problem.algo_update_func = hogwild;

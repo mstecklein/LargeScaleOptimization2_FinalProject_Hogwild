@@ -69,6 +69,7 @@ double timer_get_elapsed(long long cumulative_start, long long cumulative_end);
 
 // Returns the timer's stats for the internal gradient
 //   and coordinate update timers.
+//   (Implemented by HOGWILD! module only)
 int timer_get_internal_timer_stats(timerstats_t *gradient_stats, timerstats_t *coord_update_stats);
 
 
