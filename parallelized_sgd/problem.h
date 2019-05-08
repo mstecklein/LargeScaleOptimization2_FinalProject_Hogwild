@@ -10,10 +10,6 @@
 #include "thread_array.h"
 
 
-#define NUM_TOTAL_ITER	10000000
-#define NUM_LOG_POINTS	50
-
-
 typedef struct _problem_t {
 	int (*gradient)(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad, double *scratchpad);
 	// Algorithm:

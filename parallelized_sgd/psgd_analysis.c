@@ -43,7 +43,7 @@ static void* algo_wrapper(void *wrapperargs) {
 	int log_step; // # iters between logging
 	ttimer_t timer;
 	algowrapperargs_t *args = (algowrapperargs_t *) wrapperargs;
-	log_step = args->num_iters / NUM_LOG_POINTS;
+	log_step = args->num_iters / get_current_problem().num_log_points;
 #ifdef __linux__
 	timer_initialize(&timer, TIMER_SCOPE_THREAD);
 #endif // __linux__
@@ -116,7 +116,7 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	// Start wrapper threads
 	for (int thread_num = 0; thread_num < num_threads; thread_num++) {
 		// Fill args for this thread
-		args[thread_num].num_iters = NUM_TOTAL_ITER / num_threads;
+		args[thread_num].num_iters = get_current_problem().num_total_iter / num_threads;
 		args[thread_num].thread_num = thread_num;
 		if (!thread_num) {
 			args[thread_num].threadjob = THREADJOB_RECORD_ITERATES;
@@ -187,18 +187,18 @@ int track_gradient_coordupdate(void) {
 
 int log_initialize(log_t *log, int num_data_features) {
 	// Alloc iterates array
-	log->iterates = (double **) malloc(NUM_LOG_POINTS*sizeof(double *));
+	log->iterates = (double **) malloc(get_current_problem().num_log_points*sizeof(double *));
 	// Alloc each iterate
-	for (int i = 0; i < NUM_LOG_POINTS; i++) {
+	for (int i = 0; i < get_current_problem().num_log_points; i++) {
 		int iterate_size = num_data_features*sizeof(double);
 		double *iterate = (double *) malloc(iterate_size);
 		memset(iterate, 0, iterate_size);
 		log->iterates[i] = iterate;
 	}
 	// Alloc timestamp array
-	log->timestamps = (ttimer_t *) malloc(NUM_LOG_POINTS*sizeof(ttimer_t));
+	log->timestamps = (ttimer_t *) malloc(get_current_problem().num_log_points*sizeof(ttimer_t));
 	log->size = 0;
-	log->capacity = NUM_LOG_POINTS;
+	log->capacity = get_current_problem().num_log_points;
 	log->num_data_features = num_data_features;
 	return 0;
 }
@@ -206,7 +206,7 @@ int log_initialize(log_t *log, int num_data_features) {
 
 int log_free(log_t *log) {
 	// Free each iterate
-	for (int i = 0; i < NUM_LOG_POINTS; i++) {
+	for (int i = 0; i < get_current_problem().num_log_points; i++) {
 		free(log->iterates[i]);
 	}
 	// Free iterates array
@@ -261,7 +261,7 @@ static int write_results_log(int num_threads, log_t *log) {
 	fprintf(fp, "Time, Iterate\n");
 	// Write each log
 	double start_cumulative = log->timestamps[0].real_cumulative;
-	for (int i = 0; i < NUM_LOG_POINTS; i++) {
+	for (int i = 0; i < get_current_problem().num_log_points; i++) {
 		// Write real time elapsed
 		double time_elapsed = timer_get_elapsed(start_cumulative, log->timestamps[i].real_cumulative);
 		fprintf(fp, "%f, ", time_elapsed);

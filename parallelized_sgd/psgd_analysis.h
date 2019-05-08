@@ -12,9 +12,9 @@
 
 // Logging structure
 typedef struct _log_t {
-	double **iterates; // array of len NUM_LOG_POINTS, where each element is an array of doubles of length num_data_features
+	double **iterates; // array of len get_current_problem().num_log_points, where each element is an array of doubles of length num_data_features
 	int num_data_features; // len of iterate
-	ttimer_t *timestamps; // array of len NUM_LOG_POINTS
+	ttimer_t *timestamps; // array of len get_current_problem().num_log_points
 	int size; // number of elements in the log
 	int capacity;
 } log_t;

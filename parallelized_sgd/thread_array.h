@@ -22,7 +22,7 @@
 
 
 // The number of bytes to offset data by
-#define DATA_SPACING	32
+#define DATA_SPACING	64
 
 
 // Use to make sure the type is large enough
