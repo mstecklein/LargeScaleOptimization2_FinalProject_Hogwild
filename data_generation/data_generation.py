@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import sys
 
 """
 Generates synthetic data which is sparse in each sample
@@ -10,7 +11,7 @@ d: num features
 Lasso: indicates if this is a Lasso problem - we want to make the coefficient vector sparse
 Lasso_sparsity: proportion of coefficients that are nonzero (only used if Lasso = True)
 data_sparsity: proportion of features that are nonzero for each sample
-problem: regression OR classification
+problem: regression (r) OR classification (c)
 noisy: whether to add white Gaussian noise to the outputs
 seed: random seed for reproducing results
 
@@ -19,7 +20,7 @@ b: the vector of labels/outputs
 A: the data matrix
 x: the true coefficient vector
 """
-def gen_synth_sparse_data(n, d, Lasso = False, Lasso_sparsity = 0.1, data_sparsity = 0.1, problem = "regression", noisy = True, seed = 1000):
+def gen_synth_sparse_data(n, d, Lasso = False, Lasso_sparsity = 0.1, data_sparsity = 0.1, problem = "regression", noisy = False, seed = 1000):
 
     num_nonzero = int(d*data_sparsity)
     num_zero = d - num_nonzero
@@ -58,10 +59,11 @@ def gen_synth_sparse_data(n, d, Lasso = False, Lasso_sparsity = 0.1, data_sparsi
     if noisy:
         b += np.random.normal(0, 1, n)
 
-    if problem == "classification":
+    if problem == "c":
         b = np.sign(b)
 
     return [b, A, x]
+
 
 """
 Write data to files to use in parallel algorithms
@@ -87,6 +89,7 @@ def write_data(b, A, x, n, d, filename = "test_data"):
 
     np.savetxt(fname=filename, X=out, fmt="%-1.8f", header=metadata, comments='') #print with left justification, >= 1 character, floating point, 8 fractional digits
 
+
 """
 Shuffles the elements in each row of a matrix independently
 
@@ -104,36 +107,87 @@ def shuffle_rows(arr, seed=1000):
 
     return arr[rows, cols]
 
-def main():
-    n = 4
-    d = 4
 
-    seed = 2240
+def main(argv):
 
-    lasso = True
-    lasso_sparsity = 0.75
-    sparsity = 0.25
+    if(not validate_input(argv)):
+        print("Enter: <#samples> <#features> <sparsity> <problem type> <filename> <noisy?> <seed>")
+        return
 
-    type = "regression"
+    n = int(argv[0])
+    d = int(argv[1])
 
-    noisy = True
+    sparsity = float(argv[2])
 
-    b,A,x = gen_synth_sparse_data(n=n, d=d, Lasso=lasso, Lasso_sparsity=lasso_sparsity, data_sparsity=sparsity, problem=type, noisy=noisy, seed=seed)
+    problem_type = argv[3].lower()
 
-    write_data(b=b, A=A, x=x, n=n, d=d, filename="Test.txt")
+    filename = argv[4]
+
+    if(len(argv) >= 6):
+        if(argv[5] == "t" or argv[5] == "true"):
+            noisy = True
+        else:
+            noisy = False
+    else:
+        noisy = False
+        seed = 1000
+
+    if(len(argv) == 7):
+        seed = int(argv[6])
+    else:
+        seed = 1000
+
+
+    b,A,x = gen_synth_sparse_data(n=n, d=d, data_sparsity=sparsity, problem=problem_type, noisy=noisy, seed=seed)
+
+    write_data(b=b, A=A, x=x, n=n, d=d, filename=filename)
 
     print("A: ", A, "\n")
     print("x: ", x, "\n")
     print("b: ", b, "\n")
 
 
+def validate_input(s):
+    if (len(s) < 5 or len(s) > 7):
+        return False
+
+    #check n, d, and sparsity
+    try:
+        int(s[0])
+        int(s[1])
+        float(s[2])
+    except ValueError:
+        return False
+
+    if (float(s[2]) < 0 or float(s[2]) > 1):
+        return False
+
+    #check problem type
+    acceptable = ["r", "c"]
+
+    if (s[3].lower() not in acceptable):
+        return False
+
+    #check filename
+    if(not s[4].lower().endswith('.txt')):
+        return False
+
+    #If there is a noise parameter check it for accuracy
+    if (len(s) >= 6):
+        acceptable = ["t", "f", "true", "false"]
+
+        if(s[5].lower() not in acceptable):
+            return False
+
+    #If there is a seed parameter check it for accuracy
+    if (len(s) == 7):
+        try:
+            int(s[6])
+        except ValueError:
+            return False
+
+    return True
+
+
 if __name__ == "__main__":
-    main()
-
-
-
-
-
-
-
-
+    main(sys.argv[1:])
