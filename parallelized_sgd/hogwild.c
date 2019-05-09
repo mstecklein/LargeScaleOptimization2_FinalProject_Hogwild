@@ -15,7 +15,6 @@ unsigned int hogwild_num_atomic_dec_collisions = 0;
 
 
 static thread_array_t /*sparse_array_t*/ sparse_sample_grads;
-static double **scratchpad;
 static int num_threads;
 static thread_array_t /*unsigned int*/ rng_seedp; // seed state for random number generator, one for each thread
 
@@ -49,11 +48,11 @@ int hogwild(thread_array_t iterate, data_t *data, int thread_num) {
 
 	// Evaluate gradient
 	sparse_array_t sparse_sample_grad = TA_idx(sparse_sample_grads, thread_num, sparse_array_t);
-	sparse_sample_grad.len = sparse_sample_X.len; // TODO this is a source of thread dependency, and does not get better with a larger feature space! I think this line causes some issue later though, not here
+	sparse_sample_grad.len = sparse_sample_X.len;
 	if (track_gradient_coordupdate()) {
 		timer_start(&gradient_timers[thread_num]);
 	}
-	gradient(iterate, sparse_sample_X, sample_y, &sparse_sample_grad, scratchpad[thread_num]);
+	gradient(iterate, sparse_sample_X, sample_y, &sparse_sample_grad);
 	if (track_gradient_coordupdate()) {
 		timer_pause(&gradient_timers[thread_num]);
 	}
@@ -62,7 +61,7 @@ int hogwild(thread_array_t iterate, data_t *data, int thread_num) {
 	if (track_gradient_coordupdate()) {
 		timer_start(&coord_update_timers[thread_num]);
 	}
-	for (int i = 0; i < sparse_sample_grad.len; i++) { // TODO this is a source of thread codependency
+	for (int i = 0; i < sparse_sample_grad.len; i++) {
 		int index    = sparse_sample_grad.pts[i].index;
 		double value = sparse_sample_grad.pts[i].value;
 		atomic_decrement(&TA_idx(iterate, index, double), get_stepsize()*value);
@@ -70,8 +69,6 @@ int hogwild(thread_array_t iterate, data_t *data, int thread_num) {
 	if (track_gradient_coordupdate()) {
 		timer_pause(&coord_update_timers[thread_num]);
 	}
-	/* TODO uncomment this
-	*/
 	
 	return 0;
 }
@@ -85,11 +82,6 @@ int hogwild_initialize(int num_features, int num_thr) {
 	for (int n = 0; n < num_threads; n++) {
 		TA_idx(sparse_sample_grads, n, sparse_array_t).len = 0;
 		TA_idx(sparse_sample_grads, n, sparse_array_t).pts = (sparse_point_t *) malloc(num_features * sizeof(sparse_point_t));
-	}
-	// Initialize scratchpad
-	scratchpad = (double **) malloc(num_threads*sizeof(double *));
-	for (int n = 0; n < num_threads; n++) {
-		scratchpad[n] = (double *) malloc(num_features*sizeof(double));
 	}
 	// Initialize timers
 	gradient_timers = (ttimer_t *) malloc(num_thr * sizeof(ttimer_t));
@@ -119,11 +111,6 @@ int hogwild_deinitialize(void) {
 		free(TA_idx(sparse_sample_grads, n, sparse_array_t).pts);
 	}
 	free_thread_array(&sparse_sample_grads);
-	// Free scratchpad
-	for (int n = 0; n < num_threads; n++) {
-		free(scratchpad[n]);
-	}
-	free(scratchpad);
 	// Free timers
 	for (int n = 0; n < num_threads; n++) {
 		timer_deinitialize(&gradient_timers[n]);

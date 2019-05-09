@@ -20,7 +20,7 @@ int naive_psgd(thread_array_t iterate, data_t *data, int thread_num) {
 	pthread_mutex_lock(&lock);
 
 	// Evaluate gradient
-	gradient(iterate, sparse_sample_X, sample_y, &sparse_sample_grad, NULL);
+	gradient(iterate, sparse_sample_X, sample_y, &sparse_sample_grad);
 	// Update coordinate individually and atomically
 	for (int i = 0; i < sparse_sample_grad.len; i++) {
 		int index    = sparse_sample_grad.pts[i].index;

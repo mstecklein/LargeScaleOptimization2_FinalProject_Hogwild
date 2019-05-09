@@ -13,7 +13,7 @@
 
 // Returns the gradient for a sample given the current iterate,
 //   the sampled data point, and its respective label.
-int linreg_gradient(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad, double *scratchpad);
+int linreg_gradient(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad);
 
 
 #endif // _linear_regression_h_

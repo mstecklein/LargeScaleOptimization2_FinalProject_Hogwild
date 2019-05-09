@@ -19,6 +19,6 @@ double get_stepsize(void) {
 	return current_problem.stepsize;
 }
 
-int gradient(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad, double *scratchpad) {
-	return current_problem.gradient(iterate, sparse_sample_x, sample_y, ret_sample_grad, scratchpad);
+int gradient(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad) {
+	return current_problem.gradient(iterate, sparse_sample_x, sample_y, ret_sample_grad);
 }

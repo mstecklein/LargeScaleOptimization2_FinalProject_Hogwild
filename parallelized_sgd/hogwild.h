@@ -1,5 +1,5 @@
 /*
- * HOGWILD! algorithm from TODO
+ * HOGWILD! algorithm from "HOGWILD!: A Lock-Free Approach to Parallelizing Stochastic Gradient Descent" by Niu et. al
  */
 
 #ifndef _hogwild_h_

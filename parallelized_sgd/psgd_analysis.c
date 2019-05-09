@@ -7,8 +7,6 @@
 #include "psgd_analysis.h"
 
 
-#define THREADJOB_NONE				0
-#define THREADJOB_RECORD_ITERATES	1
 
 
 /*
@@ -245,9 +243,9 @@ void print_sparse_array(sparse_array_t *arr) {
 
 
 
-//
-// Writing results to files:::
-//
+/*
+ * Writing results to files
+ */
 
 
 static int write_results_log(int num_threads, log_t *log) {

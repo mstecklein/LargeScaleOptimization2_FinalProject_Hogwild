@@ -37,7 +37,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
         return -1;
     }
 
-    //Read in the number of samples and features, respectively
+    // Read in the number of samples and features, respectively
     int n;
     int d;
 
@@ -68,7 +68,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
         return -1;
     }
 
-    //allocate space for the arrays
+    // Allocate space for the arrays
     data->optimal_iterate = (double *) malloc(d * sizeof(double));
     data->y = (double *) malloc(n * sizeof(double));
     data->X = (double **) malloc(n * sizeof(double *));
@@ -79,7 +79,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
     data->num_samples = n;
 	data->num_features = d;
 
-    //populate the optimal iterate
+    // Populate the optimal iterate
     int c = 0;
 
     while(c < d && fscanf(fp, "%lf", &(data->optimal_iterate[c])) != EOF){
@@ -94,7 +94,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
         return -1;
     }
 
-    //read and throw away last digit - should be a 0
+    // Read and throw away last digit - should be a 0
     double trash;
 
     if(fscanf(fp, "%lf", &trash) == EOF || trash != 0){
@@ -102,7 +102,7 @@ int read_and_alloc_data(char *filename, data_t *data) {
         return -1;
     }
 
-    //populate the data and labels
+    // Populate the data and labels
     c=0;
     int r = 0;
 
@@ -133,13 +133,13 @@ int read_and_alloc_data(char *filename, data_t *data) {
 
 int dealloc_data(data_t *data) {
 
-	//free the rows of X and sparse X first
+	// Free the rows of X and sparse X first
 	for (int r = 0; r < data->num_samples; r++){
         free(data->X[r]);
         free(data->sparse_X[r].pts);
 	}
 
-	//free all the references to arrays
+	// Free all the references to arrays
 	free(data->X);
 	free(data->sparse_X);
 	free(data->y);
