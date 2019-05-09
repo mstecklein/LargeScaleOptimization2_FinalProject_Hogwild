@@ -142,9 +142,9 @@ def main(argv):
 
     write_data(b=b, A=A, x=x, n=n, d=d, filename=filename)
 
-    print("A: ", A, "\n")
-    print("x: ", x, "\n")
-    print("b: ", b, "\n")
+    #print("A: ", A, "\n")
+    #print("x: ", x, "\n")
+    #print("b: ", b, "\n")
 
 
 def validate_input(s):
