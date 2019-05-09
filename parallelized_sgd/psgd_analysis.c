@@ -8,6 +8,9 @@
 
 
 
+int track_gradientupdate;
+
+
 
 /*
  *  Analysis and algorithm wrappers
@@ -162,17 +165,6 @@ int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerst
 	pthread_attr_destroy(&attr);
 	current_problem.algo_deinit_func();
 	return 0;
-}
-
-
-static int track_gradientupdate;
-
-void set_track_gradient_coordupdate(int true_false) {
-	track_gradientupdate = true_false;
-}
-
-int track_gradient_coordupdate(void) {
-	return track_gradientupdate;
 }
 
 

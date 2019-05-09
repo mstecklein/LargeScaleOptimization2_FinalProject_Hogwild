@@ -26,8 +26,15 @@ int log_free(log_t *log);
 // Analysis
 int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerstats_t *main_thread_stats, timerstats_t *threads_stats_array, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array);
 
-void set_track_gradient_coordupdate(int true_false);
-int track_gradient_coordupdate(void);
+extern int track_gradientupdate;
+
+static inline void set_track_gradient_coordupdate(int true_false) {
+	track_gradientupdate = true_false;
+}
+
+static inline int track_gradient_coordupdate(void) {
+	return track_gradientupdate;
+}
 
 int write_results_to_file(int num_threads, log_t *log, timerstats_t main_thread_stats, timerstats_t *threads_stats_array, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array);
 

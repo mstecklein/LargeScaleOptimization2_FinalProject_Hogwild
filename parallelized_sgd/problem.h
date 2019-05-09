@@ -6,6 +6,7 @@
 #ifndef _problem_h_
 #define _problem_h_
 
+#include <stdio.h>
 #include "data.h"
 #include "thread_array.h"
 
@@ -25,15 +26,23 @@ typedef struct _problem_t {
 extern problem_t current_problem;
 
 
-void set_current_problem(problem_t problem);
+static inline void set_current_problem(problem_t problem) {
+	current_problem = problem;
+}
 
-problem_t get_current_problem(void);
+static inline problem_t get_current_problem(void) {
+	return current_problem;
+}
 
-double get_stepsize(void);
+static inline double get_stepsize(void) {
+	return current_problem.stepsize;
+}
 
 // Returns the gradient for a sample given the current iterate,
 //   the sampled data point, and its respective label.
-int gradient(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad);
+static inline int gradient(thread_array_t iterate, sparse_array_t sparse_sample_x, double sample_y, sparse_array_t *ret_sample_grad) {
+	return current_problem.gradient(iterate, sparse_sample_x, sample_y, ret_sample_grad);
+}
 
 
 #endif // _problem_h_
