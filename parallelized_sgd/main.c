@@ -113,7 +113,10 @@ int main(int argc, char **argv) {
 	}
 
 	// Write results to file
-	rc = write_results_to_file(num_threads, &log, main_thread_stats, threads_stats, gradient_stats, coord_update_stats);
+	const int max_input_filenam_len = 100;
+	char results_dir[max_input_filenam_len+1];
+	create_results_dir(filename, results_dir);
+	rc = write_results_to_file(num_threads, results_dir, &log, main_thread_stats, threads_stats, gradient_stats, coord_update_stats);
 	if (rc)
 		exit(-1);
 

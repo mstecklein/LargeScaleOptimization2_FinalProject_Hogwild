@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <pthread.h>
 #include "problem.h"
 #include "psgd_analysis.h"
@@ -240,10 +241,10 @@ void print_sparse_array(sparse_array_t *arr) {
  */
 
 
-static int write_results_log(int num_threads, log_t *log) {
+static int write_results_log(char *results_dir, int num_threads, log_t *log) {
 	FILE *fp;
-	char filename[30];
-	sprintf(filename, "log_%dthreads.csv", num_threads);
+	char filename[130];
+	sprintf(filename, "%s/log_%dthreads.csv", results_dir, num_threads);
 	fp = fopen(filename,"w");
 	if (!fp)
 		return -1;
@@ -271,10 +272,10 @@ static int write_results_log(int num_threads, log_t *log) {
 }
 
 
-static int write_results_threads_stats(int num_threads, timerstats_t main_thread_stats, timerstats_t *threads_stats_arr) {
+static int write_results_threads_stats(int num_threads, char *results_dir, timerstats_t main_thread_stats, timerstats_t *threads_stats_arr) {
 	FILE *fp;
-	char filename[30];
-	sprintf(filename, "threadstats_%dthread.csv", num_threads);
+	char filename[130];
+	sprintf(filename, "%s/threadstats_%dthread.csv", results_dir, num_threads);
 	fp = fopen(filename,"w");
 	if (!fp)
 		return -1;
@@ -291,10 +292,10 @@ static int write_results_threads_stats(int num_threads, timerstats_t main_thread
 }
 
 
-static int write_results_grad_coord(int num_threads, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array) {
+static int write_results_grad_coord(int num_threads, char *results_dir, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array) {
 	FILE *fp;
-	char filename[30];
-	sprintf(filename, "gradcoord_%dthread.csv", num_threads);
+	char filename[130];
+	sprintf(filename, "%s/gradcoord_%dthread.csv", results_dir, num_threads);
 	fp = fopen(filename,"w");
 	if (!fp)
 		return -1;
@@ -320,15 +321,26 @@ static int write_results_grad_coord(int num_threads, timerstats_t *gradient_stat
 }
 
 
-int write_results_to_file(int num_threads, log_t *log, timerstats_t main_thread_stats, timerstats_t *threads_stats_array, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array) {
+int create_results_dir(char *input_filename, char *ret_results_dir) {
+	int i = 0;
+	while (input_filename[i] != '.' && i < strlen(input_filename)) {
+		ret_results_dir[i] = input_filename[i];
+		i++;
+	}
+	ret_results_dir[i] = '\0';
+	return mkdir(ret_results_dir, 0777);
+}
+
+
+int write_results_to_file(int num_threads, char *results_dir, log_t *log, timerstats_t main_thread_stats, timerstats_t *threads_stats_array, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array) {
 	int rc;
-	rc = write_results_log(num_threads, log);
+	rc = write_results_log(results_dir, num_threads, log);
 	if (rc)
 		return rc;
-	rc = write_results_threads_stats(num_threads, main_thread_stats, threads_stats_array);
+	rc = write_results_threads_stats(num_threads, results_dir, main_thread_stats, threads_stats_array);
 	if (rc)
 		return rc;
-	rc = write_results_grad_coord(num_threads, gradient_stats_array, coord_update_stats_array);
+	rc = write_results_grad_coord(num_threads, results_dir, gradient_stats_array, coord_update_stats_array);
 	if (rc)
 		return rc;
 	return 0;
