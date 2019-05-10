@@ -321,13 +321,38 @@ static int write_results_grad_coord(int num_threads, char *results_dir, timersta
 }
 
 
-int create_results_dir(char *input_filename, char *ret_results_dir) {
+int create_results_dir(char *algorithm_name, char *problem_type, char *input_filename, char *ret_results_dir) {
+	int ret_i = 0;
 	int i = 0;
-	while (input_filename[i] != '.' && i < strlen(input_filename)) {
-		ret_results_dir[i] = input_filename[i];
+	// algorithm name
+	i = 0;
+	while (i < strlen(algorithm_name)) {
+		ret_results_dir[ret_i] = algorithm_name[i];
 		i++;
+		ret_i++;
 	}
-	ret_results_dir[i] = '\0';
+	ret_results_dir[ret_i] = '_';
+	ret_i++;
+
+	// problem type
+	i = 0;
+	while (i < strlen(problem_type)) {
+		ret_results_dir[ret_i] = problem_type[i];
+		i++;
+		ret_i++;
+	}
+	ret_results_dir[ret_i] = '_';
+	ret_i++;
+
+	// input filename
+	i = 0;
+	while (input_filename[i] != '.' && i < strlen(input_filename)) {
+		ret_results_dir[ret_i] = input_filename[i];
+		i++;
+		ret_i++;
+	}
+
+	ret_results_dir[ret_i] = '\0';
 	return mkdir(ret_results_dir, 0777);
 }
 

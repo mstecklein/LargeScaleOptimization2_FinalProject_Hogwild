@@ -23,7 +23,7 @@ int example_algo_update_independent(thread_array_t iterate, data_t *data, int th
 int example_algo_update_shared(thread_array_t iterate, data_t *data, int thread_num) {
 	// Select a random index to update. This index may also be selected by
 	//   other threads, either in the past present or future.
-	int index = rand_r(RAND_SEED) % data->num_samples;
+	int index = rand_r(RAND_SEED) % data->num_features;
 
 	// Arbitrary increment of the iterate at the selected index
 	ITERATE(index) += 0.1;
