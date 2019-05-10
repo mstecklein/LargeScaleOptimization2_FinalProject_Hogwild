@@ -36,7 +36,7 @@ static inline int track_gradient_coordupdate(void) {
 	return track_gradientupdate;
 }
 
-int create_results_dir(char *input_filename, char *ret_results_dir);
+int create_results_dir(char *algorithm_name, char *problem_type, char *input_filename, char *ret_results_dir);
 
 int write_results_to_file(int num_threads, char *results_dir, log_t *log, timerstats_t main_thread_stats, timerstats_t *threads_stats_array, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array);
 
