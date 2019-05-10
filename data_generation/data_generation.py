@@ -88,6 +88,7 @@ def write_data(b, A, x, n, d, filename = "test_data"):
     metadata = str(n) + " " + str(d)
 
     np.savetxt(fname=filename, X=out, fmt="%-1.8f", header=metadata, comments='') #print with left justification, >= 1 character, floating point, 8 fractional digits
+    np.savetxt(fname=filename[:-4] + "-iterate" + ".txt", X=x, fmt="%-1.8f", header = str(d), comments='')
 
 
 """
