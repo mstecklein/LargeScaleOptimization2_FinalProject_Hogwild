@@ -10,6 +10,10 @@
 #include "timer.h"
 
 
+// Uncomment to track gradient and coordinate update with timers:
+//#define TRACK_GRADIENT_COORDUPDATE
+
+
 // Logging structure
 typedef struct _log_t {
 	double **iterates; // array of len get_current_problem().num_log_points, where each element is an array of doubles of length num_data_features
@@ -25,16 +29,6 @@ int log_free(log_t *log);
 
 // Analysis
 int run_psgd_general_analysis(int num_threads, data_t *data, log_t *log, timerstats_t *main_thread_stats, timerstats_t *threads_stats_array, timerstats_t *gradient_stats_array, timerstats_t *coord_update_stats_array);
-
-extern int track_gradientupdate;
-
-static inline void set_track_gradient_coordupdate(int true_false) {
-	track_gradientupdate = true_false;
-}
-
-static inline int track_gradient_coordupdate(void) {
-	return track_gradientupdate;
-}
 
 int create_results_dir(char *algorithm_name, char *problem_type, char *input_filename, char *ret_results_dir);
 

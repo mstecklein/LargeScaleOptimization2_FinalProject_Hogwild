@@ -9,9 +9,6 @@
 
 
 
-int track_gradientupdate;
-
-
 
 /*
  *  Analysis and algorithm wrappers
@@ -299,23 +296,23 @@ static int write_results_grad_coord(int num_threads, char *results_dir, timersta
 	fp = fopen(filename,"w");
 	if (!fp)
 		return -1;
-	if (track_gradient_coordupdate()) {
-		// Write header
-		fprintf(fp, "Threadname, Grad_Real, Grad_User, Grad_Sys, Coord_Real, Coord_User, Coord_Sys\n");
-		// Write threads stats
-		for (int i = 0; i < num_threads; i++) {
-			fprintf(fp, "Thread%d, %f, %f, %f, %f, %f, %f\n", i,
-					gradient_stats_array[i].real,
-					gradient_stats_array[i].user,
-					gradient_stats_array[i].sys,
-					coord_update_stats_array[i].real,
-					coord_update_stats_array[i].user,
-					coord_update_stats_array[i].sys);
-		}
-	} else {
-		// Write note that we didn't track this info
-		fprintf(fp, "No stats available. Did not track them.");
+#ifdef TRACK_GRADIENT_COORDUPDATE
+	// Write header
+	fprintf(fp, "Threadname, Grad_Real, Grad_User, Grad_Sys, Coord_Real, Coord_User, Coord_Sys\n");
+	// Write threads stats
+	for (int i = 0; i < num_threads; i++) {
+		fprintf(fp, "Thread%d, %f, %f, %f, %f, %f, %f\n", i,
+				gradient_stats_array[i].real,
+				gradient_stats_array[i].user,
+				gradient_stats_array[i].sys,
+				coord_update_stats_array[i].real,
+				coord_update_stats_array[i].user,
+				coord_update_stats_array[i].sys);
 	}
+#else
+	// Write note that we didn't track this info
+	fprintf(fp, "No stats available. Did not track them.");
+#endif // TRACK_GRADIENT_COORDUPDATE
 	fclose(fp);
 	return 0;
 }

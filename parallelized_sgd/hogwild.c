@@ -49,26 +49,26 @@ int hogwild(thread_array_t iterate, data_t *data, int thread_num) {
 	// Evaluate gradient
 	sparse_array_t sparse_sample_grad = TA_idx(sparse_sample_grads, thread_num, sparse_array_t);
 	sparse_sample_grad.len = sparse_sample_X.len;
-	if (track_gradient_coordupdate()) {
-		timer_start(&gradient_timers[thread_num]);
-	}
+#ifdef TRACK_GRADIENT_COORDUPDATE
+	timer_start(&gradient_timers[thread_num]);
+#endif
 	gradient(iterate, sparse_sample_X, sample_y, &sparse_sample_grad);
-	if (track_gradient_coordupdate()) {
-		timer_pause(&gradient_timers[thread_num]);
-	}
+#ifdef TRACK_GRADIENT_COORDUPDATE
+	timer_pause(&gradient_timers[thread_num]);
+#endif
 
 	// Update coordinate individually and atomically
-	if (track_gradient_coordupdate()) {
-		timer_start(&coord_update_timers[thread_num]);
-	}
+#ifdef TRACK_GRADIENT_COORDUPDATE
+	timer_start(&coord_update_timers[thread_num]);
+#endif
 	for (int i = 0; i < sparse_sample_grad.len; i++) {
 		int index    = sparse_sample_grad.pts[i].index;
 		double value = sparse_sample_grad.pts[i].value;
 		atomic_decrement(&TA_idx(iterate, index, double), get_stepsize()*value);
 	}
-	if (track_gradient_coordupdate()) {
-		timer_pause(&coord_update_timers[thread_num]);
-	}
+#ifdef TRACK_GRADIENT_COORDUPDATE
+	timer_pause(&coord_update_timers[thread_num]);
+#endif
 	
 	return 0;
 }

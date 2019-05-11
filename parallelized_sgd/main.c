@@ -29,12 +29,8 @@ int main(int argc, char **argv) {
 	// Fifth argument is the total number of iterations,
 	// Sixth argument is the number of points to log,
 	// Seventh argument is the stepsize,
-	// Eigth argument is whether to track gradient
-	//    and coordinate update stats (Any argument here
-	//    sets it to true, defaults to false. Tracking
-	//    these stats is very intrusive).
 	if (argc < 7+1) {
-		printf("Usage: ./run <num_threads> <data_filename> <problem type> <algorithm name> <total # iterations> <# log points> <stepsize> [record gradient/update stats]\n");
+		printf("Usage: ./run <num_threads> <data_filename> <problem type> <algorithm name> <total # iterations> <# log points> <stepsize>\n");
 		printf("\tValid problem types: linearregression, logisticregression\n");
 		printf("\tValid algorithms: hogwild, exampleindependent, exampleshared, naive, segmentedhogwild\n");
 		exit(-1);
@@ -46,11 +42,6 @@ int main(int argc, char **argv) {
 	int total_num_iters = atoi(argv[5]);
 	int num_log_pts = atoi(argv[6]);
 	double stepsize = atof(argv[7]);
-	if (argc >= 7+1) {
-		set_track_gradient_coordupdate(1);
-	} else {
-		set_track_gradient_coordupdate(0);
-	}
 
 	// Read data file
 	rc = read_and_alloc_data(filename, &data);
